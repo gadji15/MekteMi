@@ -1,5 +1,7 @@
 // Authentication utilities for the Magal de Touba application
-// This will integrate with Laravel API endpoints
+// Integrated with Laravel API endpoints via lib/http
+
+import { httpGet, httpPost } from "@/lib/http"
 
 export interface User {
   id: string
@@ -23,81 +25,61 @@ export interface RegisterData {
   confirmPassword: string
 }
 
-// Mock authentication functions - replace with actual Laravel API calls
+type LoginResponse =
+  | { user: User; token: string }
+  | { data: { user: User; token: string } }
+  | { access_token: string; user: User }
+
+function normalizeLoginResponse(payload: LoginResponse): { user: User; token: string } {
+  if ("data" in payload && payload.data) return payload.data
+  if ("access_token" in payload) return { token: payload.access_token, user: (payload as any).user }
+  return payload as { user: User; token: string }
+}
+
 export const authService = {
   async login(credentials: LoginCredentials): Promise<{ user: User; token: string }> {
-    // TODO: Replace with actual Laravel API call
-    // const response = await fetch('/api/auth/login', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(credentials)
-    // })
-
-    // Mock response for development
-    await new Promise((resolve) => setTimeout(resolve, 1000)) // Simulate API delay
-
-    if (credentials.email === "admin@magal.sn" && credentials.password === "password") {
-      const user: User = {
-        id: "1",
-        email: credentials.email,
-        firstName: "Admin",
-        lastName: "Magal",
-        role: "admin",
-        createdAt: new Date().toISOString(),
-      }
-      return { user, token: "mock-jwt-token" }
-    }
-
-    throw new Error("Identifiants incorrects")
+    const payload = await httpPost<LoginResponse>("/api/auth/login", credentials)
+    const { user, token } = normalizeLoginResponse(payload)
+    return { user, token }
   },
 
   async register(data: RegisterData): Promise<{ user: User; token: string }> {
-    // TODO: Replace with actual Laravel API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
     if (data.password !== data.confirmPassword) {
       throw new Error("Les mots de passe ne correspondent pas")
     }
-
-    const user: User = {
-      id: Date.now().toString(),
-      email: data.email,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      role: "pilgrim",
-      createdAt: new Date().toISOString(),
-    }
-
-    return { user, token: "mock-jwt-token" }
+    const payload = await httpPost<LoginResponse>("/api/auth/register", data)
+    const { user, token } = normalizeLoginResponse(payload)
+    return { user, token }
   },
 
   async logout(): Promise<void> {
-    // TODO: Replace with actual Laravel API call
-    await new Promise((resolve) => setTimeout(resolve, 500))
+    try {
+      await httpPost("/api/auth/logout", {})
+    } catch {
+      // ignore logout errors
+    }
   },
 
   async getCurrentUser(): Promise<User | null> {
-    // TODO: Replace with actual Laravel API call
-    const token = tokenStorage.get()
-    if (!token) return null
-
-    // Mock user data
-    return {
-      id: "1",
-      email: "admin@magal.sn",
-      firstName: "Admin",
-      lastName: "Magal",
-      role: "admin",
-      createdAt: new Date().toISOString(),
+    try {
+      const user = await httpGet<User>("/api/auth/me")
+      return user
+    } catch {
+      return null
     }
   },
 }
 
-// Local storage utilities
+// Local storage utilities (used by the app and http client via localStorage)
+// Also mirrors the token into a non-HttpOnly cookie so middleware can guard SSR routes.
+// For production, prefer setting a secure HttpOnly cookie from Laravel.
 export const tokenStorage = {
   set: (token: string) => {
     if (typeof window !== "undefined") {
       localStorage.setItem("auth-token", token)
+      // Set a simple cookie for middleware checks (30 days)
+      const maxAge = 60 * 60 * 24 * 30
+      document.cookie = `auth-token=${encodeURIComponent(token)}; Path=/; Max-Age=${maxAge}; SameSite=Lax`
     }
   },
   get: () => {
@@ -109,6 +91,8 @@ export const tokenStorage = {
   remove: () => {
     if (typeof window !== "undefined") {
       localStorage.removeItem("auth-token")
+      // Clear the cookie
+      document.cookie = `auth-token=; Path=/; Max-Age=0; SameSite=Lax`
     }
   },
 }
