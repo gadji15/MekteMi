@@ -140,7 +140,7 @@ export default function LoginPage() {
         <Card className="mt-4 bg-primary/5 border-primary/20 animate-fade-in-delay">
           <CardContent className="pt-4">
             <p className="text-sm text-muted-foreground text-center">
-              <strong>Compte de test :</strong> admin@mbektemi.sn / password
+              <strong>Compte de test :</strong> admin@magal.sn / password
             </p>
           </CardContent>
         </Card>

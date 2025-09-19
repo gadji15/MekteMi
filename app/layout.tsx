@@ -64,8 +64,7 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <head>
-        <link rel="icon" href="/favicon.ico" sizes="any" />
-        <link rel="icon" href="/icon.jpg" type="image/svg+xml" />
+        <link rel="icon" href="/icon.jpg" type="image/jpeg" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.jpg" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
