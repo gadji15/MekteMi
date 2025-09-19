@@ -10,6 +10,8 @@ interface HttpOptions {
   signal?: AbortSignal
   // If the endpoint is absolute, skip baseUrl prefix
   absolute?: boolean
+  // Set to true only if you rely on Laravel cookies (Sanctum SPA mode)
+  withCredentials?: boolean
 }
 
 function getAuthToken(): string | null {
@@ -46,7 +48,8 @@ export async function http<T = unknown>(path: string, options: HttpOptions = {})
       headers,
       signal: options.signal ?? controller.signal,
       body: options.body ? JSON.stringify(options.body) : undefined,
-      credentials: "include", // allows Laravel cookies if used
+      credentials: options.withCredentials ? "include" : "omit",
+      mode: "cors",
       cache: "no-store",
     })
 
