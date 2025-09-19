@@ -71,10 +71,15 @@ export const authService = {
 }
 
 // Local storage utilities (used by the app and http client via localStorage)
+// Also mirrors the token into a non-HttpOnly cookie so middleware can guard SSR routes.
+// For production, prefer setting a secure HttpOnly cookie from Laravel.
 export const tokenStorage = {
   set: (token: string) => {
     if (typeof window !== "undefined") {
       localStorage.setItem("auth-token", token)
+      // Set a simple cookie for middleware checks (30 days)
+      const maxAge = 60 * 60 * 24 * 30
+      document.cookie = `auth-token=${encodeURIComponent(token)}; Path=/; Max-Age=${maxAge}; SameSite=Lax`
     }
   },
   get: () => {
@@ -86,6 +91,8 @@ export const tokenStorage = {
   remove: () => {
     if (typeof window !== "undefined") {
       localStorage.removeItem("auth-token")
+      // Clear the cookie
+      document.cookie = `auth-token=; Path=/; Max-Age=0; SameSite=Lax`
     }
   },
 }
