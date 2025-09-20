@@ -1,7 +1,7 @@
 // Authentication utilities for the Magal de Touba application
-// Integrated with Laravel API endpoints via lib/http
+// Cookie (Sanctum SPA) based flow: we fetch CSRF cookie, then perform auth with credentials included.
 
-import { httpGet, httpPost } from "@/lib/http"
+import { fetchCsrfCookie, httpGet, httpPost } from "@/lib/http"
 
 export interface User {
   id: string
@@ -25,36 +25,30 @@ export interface RegisterData {
   confirmPassword: string
 }
 
-type LoginResponse =
-  | { user: User; token: string }
-  | { data: { user: User; token: string } }
-  | { access_token: string; user: User }
-
-function normalizeLoginResponse(payload: LoginResponse): { user: User; token: string } {
-  if ("data" in payload && payload.data) return payload.data
-  if ("access_token" in payload) return { token: payload.access_token, user: (payload as any).user }
-  return payload as { user: User; token: string }
-}
-
 export const authService = {
-  async login(credentials: LoginCredentials): Promise<{ user: User; token: string }> {
-    const payload = await httpPost<LoginResponse>("/api/auth/login", credentials)
-    const { user, token } = normalizeLoginResponse(payload)
-    return { user, token }
+  async login(credentials: LoginCredentials): Promise<{ user: User }> {
+    // Ensure CSRF cookie for Sanctum SPA
+    await fetchCsrfCookie()
+    await httpPost("/api/auth/login", credentials, { withCredentials: true })
+    // Then fetch the user
+    const user = await httpGet<User>("/api/auth/me", { withCredentials: true })
+    return { user }
   },
 
-  async register(data: RegisterData): Promise<{ user: User; token: string }> {
+  async register(data: RegisterData): Promise<{ user: User }> {
     if (data.password !== data.confirmPassword) {
       throw new Error("Les mots de passe ne correspondent pas")
     }
-    const payload = await httpPost<LoginResponse>("/api/auth/register", data)
-    const { user, token } = normalizeLoginResponse(payload)
-    return { user, token }
+    await fetchCsrfCookie()
+    await httpPost("/api/auth/register", data, { withCredentials: true })
+    const user = await httpGet<User>("/api/auth/me", { withCredentials: true })
+    return { user }
   },
 
   async logout(): Promise<void> {
     try {
-      await httpPost("/api/auth/logout", {})
+      await fetchCsrfCookie()
+      await httpPost("/api/auth/logout", {}, { withCredentials: true })
     } catch {
       // ignore logout errors
     }
@@ -62,7 +56,7 @@ export const authService = {
 
   async getCurrentUser(): Promise<User | null> {
     try {
-      const user = await httpGet<User>("/api/auth/me")
+      const user = await httpGet<User>("/api/auth/me", { withCredentials: true })
       return user
     } catch {
       return null
@@ -70,29 +64,9 @@ export const authService = {
   },
 }
 
-// Local storage utilities (used by the app and http client via localStorage)
-// Also mirrors the token into a non-HttpOnly cookie so middleware can guard SSR routes.
-// For production, prefer setting a secure HttpOnly cookie from Laravel.
+// Deprecated token storage, kept as no-op to avoid breaking imports.
 export const tokenStorage = {
-  set: (token: string) => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("auth-token", token)
-      // Set a simple cookie for middleware checks (30 days)
-      const maxAge = 60 * 60 * 24 * 30
-      document.cookie = `auth-token=${encodeURIComponent(token)}; Path=/; Max-Age=${maxAge}; SameSite=Lax`
-    }
-  },
-  get: () => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("auth-token")
-    }
-    return null
-  },
-  remove: () => {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("auth-token")
-      // Clear the cookie
-      document.cookie = `auth-token=; Path=/; Max-Age=0; SameSite=Lax`
-    }
-  },
+  set: (_token: string) => {},
+  get: () => null,
+  remove: () => {},
 }

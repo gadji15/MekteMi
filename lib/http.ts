@@ -14,6 +14,10 @@ interface HttpOptions {
   withCredentials?: boolean
 }
 
+/**
+ * In cookie-based (Sanctum SPA) mode we don't attach Authorization headers.
+ * We keep this for legacy token mode, but new auth flow won't use it.
+ */
 function getAuthToken(): string | null {
   if (typeof window === "undefined") return null
   // Read directly to avoid circular imports
@@ -27,6 +31,19 @@ function buildUrl(path: string, absolute?: boolean) {
   return `${base}${p}`
 }
 
+/**
+ * Fetch the Sanctum CSRF cookie to enable session-based auth.
+ */
+export async function fetchCsrfCookie(): Promise<void> {
+  const url = `${config.apiBaseUrl.replace(/\/+$/, "")}/sanctum/csrf-cookie`
+  await fetch(url, {
+    method: "GET",
+    credentials: "include",
+    mode: "cors",
+    cache: "no-store",
+  })
+}
+
 export async function http<T = unknown>(path: string, options: HttpOptions = {}): Promise<T> {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), config.apiTimeout)
@@ -38,8 +55,8 @@ export async function http<T = unknown>(path: string, options: HttpOptions = {})
     }
 
     const token = getAuthToken()
-    if (token) {
-      // Attach Bearer token for protected routes
+    if (token && !options.withCredentials) {
+      // Attach Bearer token only in legacy token mode (no cookies)
       ;(headers as Record<string, string>)["Authorization"] = `Bearer ${token}`
     }
 
@@ -58,7 +75,6 @@ export async function http<T = unknown>(path: string, options: HttpOptions = {})
     const payload = isJson ? await res.json() : await res.text()
 
     if (!res.ok) {
-      // Try to surface a meaningful error message
       const message =
         (isJson && (payload?.message || payload?.error)) ||
         res.statusText ||
@@ -69,7 +85,6 @@ export async function http<T = unknown>(path: string, options: HttpOptions = {})
       throw error
     }
 
-    // Some Laravel APIs wrap data as { data: ... }
     return (payload?.data !== undefined ? payload.data : payload) as T
   } finally {
     clearTimeout(timeout)

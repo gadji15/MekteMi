@@ -1,28 +1,39 @@
 <?php
 
-namespace App\Models;
+namespace App\Http\Controllers;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\StorePilgrimRequest;
+use App\Http\Requests\UpdatePilgrimRequest;
+use App\Http\Resources\PilgrimResource;
+use App\Models\Pilgrim;
+use Illuminate\Http\Request;
 
-class Pilgrim extends Model
+class PilgrimController extends Controller
 {
-    use HasFactory;
+    public function index(Request $request)
+    {
+        $perPage = (int) ($request->query('per_page', 20));
+        $pilgrims = Pilgrim::orderByDesc('id')->paginate($perPage);
+        return PilgrimResource::collection($pilgrims);
+    }
 
-    protected $fillable = [
-        'firstName',
-        'lastName',
-        'email',
-        'phone',
-        'city',
-        'country',
-        'accommodationType',
-        'specialNeeds',
-        'status',
-        'registrationDate',
-    ];
+    public function store(StorePilgrimRequest $request)
+    {
+        $p = Pilgrim::create($request->payload());
+        return (new PilgrimResource($p))->response()->setStatusCode(201);
+    }
 
-    protected $casts = [
-        'registrationDate' => 'datetime',
-    ];
+    public function update(UpdatePilgrimRequest $request, string $id)
+    {
+        $p = Pilgrim::findOrFail($id);
+        $p->update($request->mapped());
+        return new PilgrimResource($p);
+    }
+
+    public function destroy(string $id)
+    {
+        Pilgrim::findOrFail($id)->delete();
+        return response()->json(['success' => true]);
+    }
 }

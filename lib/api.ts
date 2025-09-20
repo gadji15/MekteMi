@@ -36,7 +36,7 @@ export const apiService = {
   },
 
   async getPilgrimRegistrations(): Promise<ApiResponse<PilgrimRegistration[]>> {
-    const items = await httpGet<PilgrimRegistration[]>("/api/pilgrims")
+    const items = await httpGet<PilgrimRegistration[]>("/api/pilgrims", { withCredentials: true })
     return {
       data: items,
       message: "Inscriptions récupérées avec succès",
@@ -48,7 +48,7 @@ export const apiService = {
     id: string,
     status: PilgrimRegistration["status"],
   ): Promise<ApiResponse<PilgrimRegistration>> {
-    const updated = await httpPatch<PilgrimRegistration>(`/api/pilgrims/${id}`, { status })
+    const updated = await httpPatch<PilgrimRegistration>(`/api/pilgrims/${id}`, { status }, { withCredentials: true })
     return {
       data: updated,
       message: `Statut mis à jour: ${status}`,
@@ -57,7 +57,7 @@ export const apiService = {
   },
 
   async deletePilgrim(id: string): Promise<ApiResponse<null>> {
-    await httpDelete<unknown>(`/api/pilgrims/${id}`)
+    await httpDelete<unknown>(`/api/pilgrims/${id}`, { withCredentials: true })
     return { data: null, success: true, message: "Pèlerin supprimé" }
   },
 
@@ -74,17 +74,17 @@ export const apiService = {
   },
 
   async sendNotification(data: { title: string; message: string; type: string }): Promise<ApiResponse<any>> {
-    const created = await httpPost<any>("/api/notifications", data)
+    const created = await httpPost<any>("/api/notifications", data, { withCredentials: true })
     return { data: created, success: true, message: "Notification envoyée" }
   },
 
   async updateNotification(id: string, data: Partial<{ title: string; message: string; type: string }>) {
-    const updated = await httpPut<any>(`/api/notifications/${id}`, data)
+    const updated = await httpPut<any>(`/api/notifications/${id}`, data, { withCredentials: true })
     return { data: updated, success: true, message: "Notification mise à jour" }
   },
 
   async deleteNotification(id: string) {
-    await httpDelete(`/api/notifications/${id}`)
+    await httpDelete(`/api/notifications/${id}`, { withCredentials: true })
     return { data: null, success: true, message: "Notification supprimée" }
   },
 }
