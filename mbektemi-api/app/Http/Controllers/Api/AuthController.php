@@ -11,6 +11,12 @@ use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
+    protected function resolveRole(User $user): string
+    {
+        // Simple academic rule: special admin account by email, otherwise pilgrim
+        return strtolower($user->email) === 'admin@mbektemi.sn' ? 'admin' : 'pilgrim';
+    }
+
     public function register(Request $request)
     {
         $data = $request->validate([
@@ -37,7 +43,7 @@ class AuthController extends Controller
             'email'     => $user->email,
             'firstName' => trim($first) ?: 'User',
             'lastName'  => trim($last) ?: '',
-            'role'      => 'pilgrim',
+            'role'      => $this->resolveRole($user),
             'createdAt' => $user->created_at?->toISOString(),
         ], 201);
     }
@@ -66,7 +72,7 @@ class AuthController extends Controller
             'email'     => $user->email,
             'firstName' => trim($first) ?: 'User',
             'lastName'  => trim($last) ?: '',
-            'role'      => 'admin', // ajustez selon votre logique réelle
+            'role'      => $this->resolveRole($user),
             'createdAt' => $user->created_at?->toISOString(),
         ]);
     }
@@ -86,7 +92,7 @@ class AuthController extends Controller
             'email'     => $user->email,
             'firstName' => trim($first) ?: 'User',
             'lastName'  => trim($last) ?: '',
-            'role'      => 'admin', // ou 'pilgrim' / 'volunteer'
+            'role'      => $this->resolveRole($user),
             'createdAt' => $user->created_at?->toISOString(),
         ]);
     }
