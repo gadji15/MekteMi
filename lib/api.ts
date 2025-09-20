@@ -1,5 +1,6 @@
 // API utilities for Laravel backend integration
-// This file contains mock implementations that should be replaced with actual Laravel API calls
+
+import { httpDelete, httpGet, httpPatch, httpPost, httpPut } from "@/lib/http"
 
 export interface PilgrimRegistration {
   id?: string
@@ -17,78 +18,27 @@ export interface PilgrimRegistration {
 
 export interface ApiResponse<T> {
   data: T
-  message: string
+  message?: string
   success: boolean
 }
 
-// Mock API service - replace with actual Laravel endpoints
 export const apiService = {
-  // Pilgrim registration endpoints
+  // Pilgrim registration endpoints (Laravel)
   async registerPilgrim(
     data: Omit<PilgrimRegistration, "id" | "status" | "registrationDate">,
   ): Promise<ApiResponse<PilgrimRegistration>> {
-    // TODO: Replace with actual Laravel API call
-    // const response = await fetch('/api/pilgrims', {
-    //   method: 'POST',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //     'Authorization': `Bearer ${tokenStorage.get()}`
-    //   },
-    //   body: JSON.stringify(data)
-    // })
-
-    // Mock implementation
-    await new Promise((resolve) => setTimeout(resolve, 1500)) // Simulate API delay
-
-    const pilgrim: PilgrimRegistration = {
-      id: Date.now().toString(),
-      ...data,
-      status: "pending",
-      registrationDate: new Date().toISOString(),
-    }
-
+    const created = await httpPost<PilgrimRegistration>("/api/pilgrims", data)
     return {
-      data: pilgrim,
+      data: created,
       message: "Inscription enregistrée avec succès",
       success: true,
     }
   },
 
   async getPilgrimRegistrations(): Promise<ApiResponse<PilgrimRegistration[]>> {
-    // TODO: Replace with actual Laravel API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    const mockRegistrations: PilgrimRegistration[] = [
-      {
-        id: "1",
-        firstName: "Amadou",
-        lastName: "Diop",
-        email: "amadou.diop@email.com",
-        phone: "+221 77 123 45 67",
-        city: "Dakar",
-        country: "senegal",
-        accommodationType: "family",
-        specialNeeds: "",
-        status: "confirmed",
-        registrationDate: "2025-01-10T10:00:00Z",
-      },
-      {
-        id: "2",
-        firstName: "Fatou",
-        lastName: "Sall",
-        email: "fatou.sall@email.com",
-        phone: "+221 76 987 65 43",
-        city: "Thiès",
-        country: "senegal",
-        accommodationType: "hotel",
-        specialNeeds: "Mobilité réduite",
-        status: "pending",
-        registrationDate: "2025-01-12T14:30:00Z",
-      },
-    ]
-
+    const items = await httpGet<PilgrimRegistration[]>("/api/pilgrims")
     return {
-      data: mockRegistrations,
+      data: items,
       message: "Inscriptions récupérées avec succès",
       success: true,
     }
@@ -98,54 +48,43 @@ export const apiService = {
     id: string,
     status: PilgrimRegistration["status"],
   ): Promise<ApiResponse<PilgrimRegistration>> {
-    // TODO: Replace with actual Laravel API call
-    await new Promise((resolve) => setTimeout(resolve, 800))
-
+    const updated = await httpPatch<PilgrimRegistration>(`/api/pilgrims/${id}`, { status })
     return {
-      data: {
-        id,
-        firstName: "Amadou",
-        lastName: "Diop",
-        email: "amadou.diop@email.com",
-        phone: "+221 77 123 45 67",
-        city: "Dakar",
-        country: "senegal",
-        accommodationType: "family",
-        specialNeeds: "",
-        status,
-        registrationDate: "2025-01-10T10:00:00Z",
-      },
+      data: updated,
       message: `Statut mis à jour: ${status}`,
       success: true,
     }
   },
 
-  // Schedule endpoints
-  async getSchedules(): Promise<ApiResponse<any[]>> {
-    await new Promise((resolve) => setTimeout(resolve, 800))
-    return {
-      data: [],
-      message: "Horaires récupérés",
-      success: true,
-    }
+  async deletePilgrim(id: string): Promise<ApiResponse<null>> {
+    await httpDelete<unknown>(`/api/pilgrims/${id}`)
+    return { data: null, success: true, message: "Pèlerin supprimé" }
   },
 
-  // Notification endpoints
+  // Schedules
+  async getSchedules(): Promise<ApiResponse<any[]>> {
+    const schedules = await httpGet<any[]>("/api/schedules")
+    return { data: schedules, success: true, message: "Horaires récupérés" }
+  },
+
+  // Notifications
   async getNotifications(): Promise<ApiResponse<any[]>> {
-    await new Promise((resolve) => setTimeout(resolve, 600))
-    return {
-      data: [],
-      message: "Notifications récupérées",
-      success: true,
-    }
+    const items = await httpGet<any[]>("/api/notifications")
+    return { data: items, success: true, message: "Notifications récupérées" }
   },
 
   async sendNotification(data: { title: string; message: string; type: string }): Promise<ApiResponse<any>> {
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    return {
-      data: { id: Date.now().toString(), ...data },
-      message: "Notification envoyée",
-      success: true,
-    }
+    const created = await httpPost<any>("/api/notifications", data)
+    return { data: created, success: true, message: "Notification envoyée" }
+  },
+
+  async updateNotification(id: string, data: Partial<{ title: string; message: string; type: string }>) {
+    const updated = await httpPut<any>(`/api/notifications/${id}`, data)
+    return { data: updated, success: true, message: "Notification mise à jour" }
+  },
+
+  async deleteNotification(id: string) {
+    await httpDelete(`/api/notifications/${id}`)
+    return { data: null, success: true, message: "Notification supprimée" }
   },
 }
