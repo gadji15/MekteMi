@@ -47,11 +47,15 @@ const Button = React.forwardRef<
 ) {
   const Comp = asChild ? Slot : 'button'
 
+  // Only attach ref when rendering a real <button>.
+  // When asChild is true, the composed child might be a function component without ref support.
+  const refProps = asChild ? {} : { ref }
+
   return (
     <Comp
       data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
-      ref={ref as any}
+      {...refProps}
       {...props}
     />
   )
