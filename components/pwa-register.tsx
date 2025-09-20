@@ -7,6 +7,15 @@ export default function PWARegister() {
     if (typeof window === "undefined") return
     if (!("serviceWorker" in navigator)) return
 
+    // In development, avoid registering a service worker to prevent caching issues (e.g., missing CSS).
+    if (process.env.NODE_ENV !== "production") {
+      // Best effort: unregister any existing SW from a previous prod build.
+      navigator.serviceWorker.getRegistrations?.().then((regs) => {
+        regs.forEach((r) => r.unregister().catch(() => {}))
+      })
+      return
+    }
+
     const register = async () => {
       try {
         const registration = await navigator.serviceWorker.register("/sw.js", {
@@ -20,8 +29,6 @@ export default function PWARegister() {
           if (!newWorker) return
           newWorker.addEventListener("statechange", () => {
             if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
-              // New content is available; optionally notify the user.
-              // You could dispatch a custom event or use a toast system here.
               console.info("Une nouvelle version de l'application est disponible. Actualisez pour mettre à jour.")
             }
           })
@@ -33,7 +40,6 @@ export default function PWARegister() {
 
     register()
 
-    // Optional: check for updates periodically
     const interval = setInterval(async () => {
       try {
         const reg = await navigator.serviceWorker.getRegistration()
