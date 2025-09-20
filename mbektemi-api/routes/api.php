@@ -11,23 +11,21 @@ use App\Http\Controllers\NotificationController;
 | API Routes
 |--------------------------------------------------------------------------
 | Copiez-collez tout ce fichier dans routes/api.php de votre projet Laravel.
-| Il expose l'authentification (Sanctum tokens), les pèlerins, les
-| notifications et les horaires, selon ce que le frontend attend.
+| Il expose l'authentification (Sanctum cookies SPA), les pèlerins, les
+| notifications et les horaires.
 |
 | Prérequis:
 | - Sanctum installé et migré
-| - app/Models/User.php utilise HasApiTokens
+| - SANCTUM_STATEFUL_DOMAINS / SESSION_DOMAIN / CORS configurés
 */
 
-/* ---------------------------- Auth (Sanctum) ---------------------------- */
-Route::prefix('auth')->group(function () {
+/* ---------------------------- Auth (Sanctum SPA) ----------------------- */
+/* Utilisation de la session => middleware 'web' requis pour login/logout */
+Route::prefix('auth')->middleware('web')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login',    [AuthController::class, 'login']);
-
-    Route::middleware('auth:sanctum')->group(function () {
-        Route::get('/me',      [AuthController::class, 'me']);
-        Route::post('/logout', [AuthController::class, 'logout']);
-    });
+    Route::post('/logout',   [AuthController::class, 'logout'])->middleware('auth:sanctum');
+    Route::get('/me',        [AuthController::class, 'me'])->middleware('auth:sanctum');
 });
 
 /* ----------------------------- Schedules ------------------------------- */
@@ -41,7 +39,7 @@ Route::get('/notifications', [NotificationController::class, 'index']);
 /* Rendre l'inscription publique; les autres actions restent protégées */
 Route::post('/pilgrims', [PilgrimController::class, 'store']);
 
-/* ----------------------- Routes protégées (token) ---------------------- */
+/* ----------------------- Routes protégées (token/cookie) --------------- */
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/pilgrims',         [PilgrimController::class, 'index']);
     Route::patch('/pilgrims/{id}',  [PilgrimController::class, 'update']);
