@@ -1,83 +1,37 @@
+"use client"
+
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Clock, MapPin, Calendar, Sun, Moon, Star } from "lucide-react"
+import { Clock, MapPin, Calendar, Sun } from "lucide-react"
 import { PrayerIcon, MosqueIcon } from "@/components/custom-icons"
 import { HeroSection } from "@/components/hero-section"
+import { apiService } from "@/lib/api"
 
-const schedules = [
-  {
-    id: "1",
-    title: "Fajr (Prière de l'aube)",
-    description: "Première prière de la journée",
-    startTime: "05:30",
-    endTime: "06:00",
-    location: "Grande Mosquée de Touba",
-    type: "prayer" as const,
-    icon: Sun,
-  },
-  {
-    id: "2",
-    title: "Dhuhr (Prière de midi)",
-    description: "Prière du milieu de journée",
-    startTime: "13:15",
-    endTime: "13:45",
-    location: "Grande Mosquée de Touba",
-    type: "prayer" as const,
-    icon: Sun,
-  },
-  {
-    id: "3",
-    title: "Asr (Prière de l'après-midi)",
-    description: "Prière de l'après-midi",
-    startTime: "16:30",
-    endTime: "17:00",
-    location: "Grande Mosquée de Touba",
-    type: "prayer" as const,
-    icon: Sun,
-  },
-  {
-    id: "4",
-    title: "Maghrib (Prière du coucher)",
-    description: "Prière du coucher du soleil",
-    startTime: "19:00",
-    endTime: "19:30",
-    location: "Grande Mosquée de Touba",
-    type: "prayer" as const,
-    icon: Moon,
-  },
-  {
-    id: "5",
-    title: "Isha (Prière de la nuit)",
-    description: "Dernière prière de la journée",
-    startTime: "20:30",
-    endTime: "21:00",
-    location: "Grande Mosquée de Touba",
-    type: "prayer" as const,
-    icon: Star,
-  },
-  {
-    id: "6",
-    title: "Cérémonie d'ouverture du Magal",
-    description: "Cérémonie officielle d'ouverture",
-    startTime: "09:00",
-    endTime: "11:00",
-    location: "Mausolée de Cheikh Ahmadou Bamba",
-    type: "ceremony" as const,
-    icon: MosqueIcon,
-  },
-  {
-    id: "7",
-    title: "Conférence religieuse",
-    description: "Enseignements sur la vie de Cheikh Ahmadou Bamba",
-    startTime: "15:00",
-    endTime: "17:00",
-    location: "Centre de conférences",
-    type: "event" as const,
-    icon: Calendar,
-  },
-]
+type ScheduleItem = {
+  id: string
+  title: string
+  description?: string
+  start_time?: string
+  end_time?: string
+  location?: string
+  type?: "prayer" | "event" | "ceremony" | string
+}
 
-const getTypeColor = (type: string) => {
+// Map API schedule type to an icon
+function getTypeIcon(type?: string) {
+  switch (type) {
+    case "ceremony":
+      return MosqueIcon
+    case "event":
+      return Calendar
+    case "prayer":
+    default:
+      return Sun
+  }
+}
+
+const getTypeColor = (type?: string) => {
   switch (type) {
     case "prayer":
       return "bg-gradient-to-r from-primary/20 to-secondary/20 text-primary border-primary/30"
@@ -90,7 +44,7 @@ const getTypeColor = (type: string) => {
   }
 }
 
-const getTypeLabel = (type: string) => {
+const getTypeLabel = (type?: string) => {
   switch (type) {
     case "prayer":
       return "Prière"
@@ -104,6 +58,29 @@ const getTypeLabel = (type: string) => {
 }
 
 export default function HorairesPage() {
+  const [items, setItems] = useState<ScheduleItem[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string>("")
+
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      try {
+        const res = await apiService.getSchedules()
+        if (!mounted) return
+        setItems(res.data || [])
+      } catch (e) {
+        if (!mounted) return
+        setError(e instanceof Error ? e.message : "Impossible de charger les horaires")
+      } finally {
+        if (mounted) setIsLoading(false)
+      }
+    })()
+    return () => {
+      mounted = false
+    }
+  }, [])
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
       <HeroSection
@@ -121,55 +98,94 @@ export default function HorairesPage() {
       </HeroSection>
 
       <main className="max-w-6xl mx-auto px-4 py-12">
-        <div className="grid gap-8">
-          {schedules.map((schedule, index) => {
-            const IconComponent = schedule.icon
-            return (
-              <Card
-                key={schedule.id}
-                className="group hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 border-0 bg-gradient-to-r from-card to-muted/30"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-4 flex-1">
-                      <div className="w-14 h-14 bg-gradient-to-br from-primary to-secondary rounded-2xl flex items-center justify-center group-hover:rotate-12 transition-transform duration-300">
-                        {schedule.type === "ceremony" ? (
-                          <MosqueIcon className="w-7 h-7 text-white" />
-                        ) : (
-                          <IconComponent className="w-7 h-7 text-white" />
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-3">
-                          <CardTitle className="text-xl md:text-2xl">{schedule.title}</CardTitle>
-                          <Badge className={getTypeColor(schedule.type)}>{getTypeLabel(schedule.type)}</Badge>
-                        </div>
-                        <CardDescription className="text-base text-muted-foreground">
-                          {schedule.description}
-                        </CardDescription>
-                      </div>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-6 text-muted-foreground">
-                    <div className="flex items-center gap-3 bg-primary/5 px-4 py-2 rounded-lg">
-                      <Clock className="w-5 h-5 text-primary" />
-                      <span className="font-semibold text-primary">
-                        {schedule.startTime} - {schedule.endTime}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3 bg-secondary/5 px-4 py-2 rounded-lg">
-                      <MapPin className="w-5 h-5 text-secondary" />
-                      <span className="font-medium text-secondary">{schedule.location}</span>
+        {isLoading ? (
+          <div className="grid gap-6">
+            {[...Array(4)].map((_, i) => (
+              <Card key={i} className="border-0 bg-gradient-to-r from-card to-muted/30">
+                <CardContent className="p-6">
+                  <div className="animate-pulse flex gap-4">
+                    <div className="w-14 h-14 bg-muted rounded-2xl" />
+                    <div className="flex-1 space-y-3">
+                      <div className="h-5 w-1/3 bg-muted rounded" />
+                      <div className="h-4 w-2/3 bg-muted rounded" />
+                      <div className="h-4 w-1/2 bg-muted rounded" />
                     </div>
                   </div>
                 </CardContent>
               </Card>
-            )
-          })}
-        </div>
+            ))}
+          </div>
+        ) : error ? (
+          <Card className="border-0 bg-gradient-to-br from-card to-muted/30">
+            <CardContent className="p-6">
+              <p className="text-destructive font-medium">{error}</p>
+            </CardContent>
+          </Card>
+        ) : items.length === 0 ? (
+          <Card className="border-0 bg-gradient-to-br from-card to-muted/30">
+            <CardContent className="p-6">
+              <p className="text-muted-foreground">Aucun horaire disponible pour le moment.</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-8">
+            {items.map((schedule, index) => {
+              const IconComponent = getTypeIcon(schedule.type)
+              const start = schedule.start_time ?? ""
+              const end = schedule.end_time ?? ""
+              return (
+                <Card
+                  key={schedule.id}
+                  className="group hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 border-0 bg-gradient-to-r from-card to-muted/30"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-4 flex-1">
+                        <div className="w-14 h-14 bg-gradient-to-br from-primary to-secondary rounded-2xl flex items-center justify-center group-hover:rotate-12 transition-transform duration-300">
+                          {schedule.type === "ceremony" ? (
+                            <MosqueIcon className="w-7 h-7 text-white" />
+                          ) : (
+                            <IconComponent className="w-7 h-7 text-white" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-3">
+                            <CardTitle className="text-xl md:text-2xl">{schedule.title}</CardTitle>
+                            <Badge className={getTypeColor(schedule.type)}>{getTypeLabel(schedule.type)}</Badge>
+                          </div>
+                          {schedule.description && (
+                            <CardDescription className="text-base text-muted-foreground">
+                              {schedule.description}
+                            </CardDescription>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-6 text-muted-foreground">
+                      {(start || end) && (
+                        <div className="flex items-center gap-3 bg-primary/5 px-4 py-2 rounded-lg">
+                          <Clock className="w-5 h-5 text-primary" />
+                          <span className="font-semibold text-primary">
+                            {start} {end ? `- ${end}` : ""}
+                          </span>
+                        </div>
+                      )}
+                      {schedule.location && (
+                        <div className="flex items-center gap-3 bg-secondary/5 px-4 py-2 rounded-lg">
+                          <MapPin className="w-5 h-5 text-secondary" />
+                          <span className="font-medium text-secondary">{schedule.location}</span>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </div>
+        )}
 
         <Card className="mt-12 bg-gradient-to-r from-primary/5 via-secondary/5 to-primary/5 border-primary/20">
           <CardHeader>

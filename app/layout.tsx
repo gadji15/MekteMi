@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/auth-context"
 import LayoutWrapper from "@/components/layout-wrapper"
 import "./globals.css"
 import { Suspense } from "react"
+import PWARegister from "@/components/pwa-register"
 
 export const metadata: Metadata = {
   title: "MbekteMi - Application Communautaire",
@@ -77,6 +78,7 @@ export default function RootLayout({
             <LayoutWrapper>{children}</LayoutWrapper>
           </AuthProvider>
         </Suspense>
+        <PWARegister />
         <Analytics />
       </body>
     </html>
