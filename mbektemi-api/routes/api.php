@@ -34,11 +34,13 @@ Route::prefix('auth')->group(function () {
 /* Public: adaptez si vous souhaitez protéger */
 Route::get('/schedules', [ScheduleController::class, 'index']);
 
+/* ----------------------------- Pilgrims ----------------------------- */
+/* Rendre l'inscription publique; les autres actions restent protégées */
+Route::post('/pilgrims', [PilgrimController::class, 'store']);
+
 /* ----------------------- Routes protégées (token) ---------------------- */
 Route::middleware('auth:sanctum')->group(function () {
-    /* ----------------------------- Pilgrims ----------------------------- */
     Route::get('/pilgrims',         [PilgrimController::class, 'index']);
-    Route::post('/pilgrims',        [PilgrimController::class, 'store']);
     Route::patch('/pilgrims/{id}',  [PilgrimController::class, 'update']);
     Route::delete('/pilgrims/{id}', [PilgrimController::class, 'destroy']);
 
