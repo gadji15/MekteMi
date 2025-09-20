@@ -3,7 +3,7 @@
 import type React from "react"
 import { createContext, useContext, useEffect, useState } from "react"
 import type { User } from "@/lib/auth"
-import { authService, tokenStorage } from "@/lib/auth"
+import { authService } from "@/lib/auth"
 
 interface AuthContextType {
   user: User | null
@@ -26,14 +26,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Check if user is already logged in
     const initAuth = async () => {
       try {
         const currentUser = await authService.getCurrentUser()
         setUser(currentUser)
       } catch (error) {
         console.error("Failed to get current user:", error)
-        tokenStorage.remove()
       } finally {
         setIsLoading(false)
       }
@@ -43,13 +41,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const login = async (email: string, password: string) => {
-    try {
-      const { user, token } = await authService.login({ email, password })
-      tokenStorage.set(token)
-      setUser(user)
-    } catch (error) {
-      throw error
-    }
+    const res = await authService.login({ email, password })
+    setUser(res.user)
   }
 
   const register = async (data: {
@@ -59,24 +52,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     password: string
     confirmPassword: string
   }) => {
-    try {
-      const { user, token } = await authService.register(data)
-      tokenStorage.set(token)
-      setUser(user)
-    } catch (error) {
-      throw error
-    }
+    const res = await authService.register(data)
+    setUser(res.user)
   }
 
   const logout = async () => {
     try {
       await authService.logout()
-      tokenStorage.remove()
-      setUser(null)
-    } catch (error) {
-      console.error("Logout error:", error)
-      // Still remove token and user even if API call fails
-      tokenStorage.remove()
+    } finally {
       setUser(null)
     }
   }
