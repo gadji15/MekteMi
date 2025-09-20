@@ -87,4 +87,45 @@ export const apiService = {
     await httpDelete(`/api/notifications/${id}`, { withCredentials: true })
     return { data: null, success: true, message: "Notification supprimée" }
   },
+
+  // Points of Interest
+  async getPointsOfInterest(): Promise<ApiResponse<any[]>> {
+    const items = await httpGet<any[]>("/api/points-of-interest")
+    return { data: items, success: true, message: "Points d'intérêt récupérés" }
+  },
+  async createPointOfInterest(data: {
+    name: string
+    description?: string
+    address?: string
+    latitude?: number
+    longitude?: number
+    category: string
+    isOpen?: boolean
+    openingHours?: string
+    phone?: string
+  }) {
+    const created = await httpPost<any>("/api/points-of-interest", data, { withCredentials: true })
+    return { data: created, success: true, message: "Point d'intérêt créé" }
+  },
+  async updatePointOfInterest(
+    id: string,
+    data: Partial<{
+      name: string
+      description: string
+      address: string
+      latitude: number
+      longitude: number
+      category: string
+      isOpen: boolean
+      openingHours: string
+      phone: string
+    }>,
+  ) {
+    const updated = await httpPut<any>(`/api/points-of-interest/${id}`, data, { withCredentials: true })
+    return { data: updated, success: true, message: "Point d'intérêt mis à jour" }
+  },
+  async deletePointOfInterest(id: string) {
+    await httpDelete(`/api/points-of-interest/${id}`, { withCredentials: true })
+    return { data: null, success: true, message: "Point d'intérêt supprimé" }
+  },
 }
