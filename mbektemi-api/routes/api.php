@@ -34,6 +34,9 @@ Route::prefix('auth')->group(function () {
 /* Public: adaptez si vous souhaitez protéger */
 Route::get('/schedules', [ScheduleController::class, 'index']);
 
+/* ----------------------------- Notifications (public GET) -------------- */
+Route::get('/notifications', [NotificationController::class, 'index']);
+
 /* ----------------------------- Pilgrims ----------------------------- */
 /* Rendre l'inscription publique; les autres actions restent protégées */
 Route::post('/pilgrims', [PilgrimController::class, 'store']);
@@ -45,7 +48,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/pilgrims/{id}', [PilgrimController::class, 'destroy']);
 
     /* --------------------------- Notifications -------------------------- */
-    Route::get('/notifications',           [NotificationController::class, 'index']);
     Route::post('/notifications',          [NotificationController::class, 'store']);
     Route::put('/notifications/{id}',      [NotificationController::class, 'update']);
     Route::delete('/notifications/{id}',   [NotificationController::class, 'destroy']);
