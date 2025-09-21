@@ -1,11 +1,11 @@
-# Production Dockerfile for Laravel (PHP 8.3 + Nginx) suitable for Render (Docker)
-# Base image with PHP-FPM + Nginx managed by supervisord
-FROM webdevops/php-nginx:8.3-alpine
+# Production Dockerfile for Laravel (PHP 8.3 CLI) suitable for Render (Docker)
+# Render expects the app to bind on $PORT, we use PHP built-in server for simplicity.
 
-ENV WEB_DOCUMENT_ROOT=/var/www/html/public
+FROM php:8.3-alpine
+
+ENV APP_ENV=production
 ENV PHP_DATE_TIMEZONE=Africa/Dakar
 ENV COMPOSER_ALLOW_SUPERUSER=1
-
 WORKDIR /var/www/html
 
 # System deps and PHP extensions
@@ -18,24 +18,22 @@ RUN wget -qO /usr/local/bin/composer https://getcomposer.org/composer-stable.pha
 
 # Copy composer files and install dependencies first (better caching)
 COPY composer.json composer.lock ./
-# Install without scripts because artisan isn't present yet
 RUN composer install --no-dev --no-interaction --no-progress --no-scripts
 
 # Copy the application code
 COPY . .
 
-# Now that artisan exists, run autoload optimization and package discovery
+# Optimize autoload and discover packages (artisan exists now)
 RUN composer dump-autoload -o \
- && php artisan package:discover --ansi || true
-
-# Prepare permissions and entrypoint
-RUN chown -R application:application /var/www/html \
+ && php artisan package:discover --ansi || true \
  && mkdir -p storage/logs bootstrap/cache \
- && chown -R application:application storage bootstrap/cache \
- && chmod -R ug+rwX storage bootstrap/cache \
- && chmod +x docker-entrypoint.sh
+ && chmod -R 775 storage bootstrap/cache
 
-EXPOSE 8080
+# Ensure entrypoint is executable
+RUN chmod +x docker-entrypoint.sh
 
-# Start via our entrypoint (runs migrations, storage:link, then launches supervisord)
+# Render injects $PORT (default 10000). We'll bind to that.
+EXPOSE 10000
+
+# Start via entrypoint: run migrations, storage:link, then launch PHP built-in server
 CMD ["bash", "-lc", "./docker-entrypoint.sh"]
