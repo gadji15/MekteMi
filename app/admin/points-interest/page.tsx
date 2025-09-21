@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { apiService } from "@/lib/api"
 import { MapPin, Plus, Save, Trash2 } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 
 type Poi = {
   id: string
@@ -67,30 +68,45 @@ export default function AdminPointsInterestPage() {
 
   const onDelete = async (id: string) => {
     if (!confirm("Supprimer ce point d'intérêt ?")) return
-    await apiService.deletePointOfInterest(id)
-    await fetchAll()
+    try {
+      await apiService.deletePointOfInterest(id)
+      toast.success("Point d'intérêt supprimé")
+      await fetchAll()
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Suppression impossible")
+    }
   }
 
   const onSave = async () => {
     if (!editing) return
+    if (!editing.name.trim()) {
+      toast.error("Le nom est requis")
+      return
+    }
     const payload = {
-      name: editing.name,
-      description: editing.description,
-      address: editing.address,
+      name: editing.name.trim(),
+      description: editing.description?.trim() || undefined,
+      address: editing.address?.trim() || undefined,
       latitude: editing.latitude,
       longitude: editing.longitude,
       category: editing.category,
       isOpen: !!editing.isOpen,
-      openingHours: editing.openingHours,
-      phone: editing.phone,
+      openingHours: editing.openingHours?.trim() || undefined,
+      phone: editing.phone?.trim() || undefined,
     }
-    if (editing.id) {
-      await apiService.updatePointOfInterest(editing.id, payload)
-    } else {
-      await apiService.createPointOfInterest(payload)
+    try {
+      if (editing.id) {
+        await apiService.updatePointOfInterest(editing.id, payload)
+        toast.success("Point d'intérêt mis à jour")
+      } else {
+        await apiService.createPointOfInterest(payload)
+        toast.success("Point d'intérêt créé")
+      }
+      setEditing(null)
+      await fetchAll()
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Enregistrement impossible")
     }
-    setEditing(null)
-    await fetchAll()
   }
 
   const counterByCategory = useMemo(() => {
