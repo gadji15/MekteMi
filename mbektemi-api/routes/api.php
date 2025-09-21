@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\PilgrimController;
 use App\Http\Controllers\NotificationController;
@@ -11,23 +10,11 @@ use App\Http\Controllers\PointOfInterestController;
 |--------------------------------------------------------------------------
 | API Routes
 |--------------------------------------------------------------------------
-| Copiez-collez tout ce fichier dans routes/api.php de votre projet Laravel.
-| Il expose l'authentification (Sanctum cookies SPA), les pèlerins, les
-| notifications, les horaires et les points d'intérêt.
-|
+| Expose les endpoints REST publics/protégés (hors auth SPA qui vit dans web.php).
 | Prérequis:
 | - Sanctum installé et migré
 | - SANCTUM_STATEFUL_DOMAINS / SESSION_DOMAIN / CORS configurés
 */
-
-/* ---------------------------- Auth (Sanctum SPA) ----------------------- */
-/* Utilisation de la session => middleware 'web' requis pour login/logout */
-Route::prefix('auth')->middleware('web')->group(function () {
-    Route::post('/register', [AuthController::class, 'register']);
-    Route::post('/login',    [AuthController::class, 'login']);
-    Route::post('/logout',   [AuthController::class, 'logout'])->middleware('auth:sanctum');
-    Route::get('/me',        [AuthController::class, 'me'])->middleware('auth:sanctum');
-});
 
 /* ----------------------------- Schedules ------------------------------- */
 /* Public: adaptez si vous souhaitez protéger */
