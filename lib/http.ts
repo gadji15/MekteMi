@@ -20,6 +20,12 @@ function buildUrl(path: string, absolute?: boolean) {
   return `${base}${p}`
 }
 
+function readCookie(name: string): string | null {
+  if (typeof document === "undefined") return null
+  const match = document.cookie.match(new RegExp("(^|; )" + name.replace(/([.$?*|{}()[\\]\\\\/+^])/g, "\\$1") + "=([^;]*)"))
+  return match ? decodeURIComponent(match[2]) : null
+}
+
 // Create Axios instance
 const client = axios.create({
   baseURL: config.apiBaseUrl,
@@ -40,6 +46,17 @@ client.interceptors.request.use((cfg) => {
       if (token && !cfg.withCredentials) {
         cfg.headers = cfg.headers ?? {}
         cfg.headers["Authorization"] = `Bearer ${token}`
+      }
+      // Extra safety: when using cookies, ensure XSRF header is present
+      if (cfg.withCredentials) {
+        const xsrf = readCookie("XSRF-TOKEN")
+        if (xsrf) {
+          cfg.headers = cfg.headers ?? {}
+          // Do not overwrite if already set by axios
+          if (!("X-XSRF-TOKEN" in cfg.headers)) {
+            cfg.headers["X-XSRF-TOKEN"] = xsrf
+          }
+        }
       }
     }
   } catch {
