@@ -50,7 +50,7 @@ export default function AdminSettingsPage() {
     }
   }
 
-  const updateSetting = (key: string, value: any) => {
+  const updateSetting = (key: keyof typeof settings, value: typeof settings[typeof key]) => {
     setSettings((prev) => ({ ...prev, [key]: value }))
     if (saveSuccess) setSaveSuccess(false)
     if (error) setError("")
