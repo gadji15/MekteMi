@@ -14,13 +14,16 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Default test user
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        // Default test user (idempotent)
+        User::query()->updateOrCreate(
+            ['email' => 'test@example.com'],
+            [
+                'name' => 'Test User',
+                'password' => Hash::make('password'),
+            ]
+        );
 
-        // Simple admin user for demo (matches frontend rule)
+        // Simple admin user for demo (matches frontend rule) - idempotent
         User::query()->updateOrCreate(
             ['email' => 'admin@mbektemi.sn'],
             [
@@ -29,7 +32,7 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        // Seed a few POIs
+        // Seed a few POIs (idempotent)
         $pois = [
             [
                 'name' => 'Grande Mosquée de Touba',
