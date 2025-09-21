@@ -22,8 +22,14 @@ function buildUrl(path: string, absolute?: boolean) {
 
 function readCookie(name: string): string | null {
   if (typeof document === "undefined") return null
-  const match = document.cookie.match(new RegExp("(^|; )" + name.replace(/([.$?*|{}()[\\]\\\\/+^])/g, "\\$1") + "=([^;]*)"))
-  return match ? decodeURIComponent(match[2]) : null
+  const prefix = `${name}=`
+  const cookies = document.cookie ? document.cookie.split("; ") : []
+  for (const c of cookies) {
+    if (c.startsWith(prefix)) {
+      return decodeURIComponent(c.slice(prefix.length))
+    }
+  }
+  return null
 }
 
 // Create Axios instance
