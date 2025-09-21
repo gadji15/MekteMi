@@ -1,5 +1,5 @@
 -- SQL script to create the points_of_interest table in Laravel/MySQL database
--- This script can be used as guidance for a migration
+-- This script should be run via a Laravel migration or directly in the DB for demo purposes
 
 CREATE TABLE IF NOT EXISTS points_of_interest (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

@@ -11,6 +11,18 @@ use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
+    protected function resolveRole(User $user): string
+    {
+        // Admin list can be configured via env ADMIN_EMAILS (comma-separated), defaults to admin@mbektemi.sn
+        $configured = env('ADMIN_EMAILS', 'admin@mbektemi.sn');
+        $admins = array_filter(array_map(
+            fn ($e) => strtolower(trim($e)),
+            explode(',', (string) $configured)
+        ));
+
+        return in_array(strtolower($user->email), $admins, true) ? 'admin' : 'pilgrim';
+    }
+
     public function register(Request $request)
     {
         $data = $request->validate([
@@ -37,7 +49,7 @@ class AuthController extends Controller
             'email'     => $user->email,
             'firstName' => trim($first) ?: 'User',
             'lastName'  => trim($last) ?: '',
-            'role'      => 'pilgrim',
+            'role'      => $this->resolveRole($user),
             'createdAt' => $user->created_at?->toISOString(),
         ], 201);
     }
@@ -66,7 +78,7 @@ class AuthController extends Controller
             'email'     => $user->email,
             'firstName' => trim($first) ?: 'User',
             'lastName'  => trim($last) ?: '',
-            'role'      => 'admin', // ajustez selon votre logique réelle
+            'role'      => $this->resolveRole($user),
             'createdAt' => $user->created_at?->toISOString(),
         ]);
     }
@@ -86,7 +98,7 @@ class AuthController extends Controller
             'email'     => $user->email,
             'firstName' => trim($first) ?: 'User',
             'lastName'  => trim($last) ?: '',
-            'role'      => 'admin', // ou 'pilgrim' / 'volunteer'
+            'role'      => $this->resolveRole($user),
             'createdAt' => $user->created_at?->toISOString(),
         ]);
     }

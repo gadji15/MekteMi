@@ -68,7 +68,7 @@ export default function AdminPilgrimsPage() {
       if (response.success) {
         setPilgrims(response.data)
       } else {
-        setError(response.message)
+        setError(response.message ?? "Une erreur est survenue")
       }
     } catch (err) {
       setError("Erreur lors du chargement des inscriptions")
@@ -83,7 +83,7 @@ export default function AdminPilgrimsPage() {
       if (response.success) {
         setPilgrims((prev) => prev.map((pilgrim) => (pilgrim.id === id ? { ...pilgrim, status: newStatus } : pilgrim)))
       } else {
-        setError(response.message)
+        setError(response.message ?? "Une erreur est survenue")
       }
     } catch (err) {
       setError("Erreur lors de la mise à jour du statut")

@@ -46,7 +46,7 @@ const statusData = [
 ]
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState({
+  const [stats, _setStats] = useState({
     totalPilgrims: 1247,
     confirmedPilgrims: 810,
     pendingPilgrims: 312,

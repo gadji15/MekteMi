@@ -1,6 +1,7 @@
 // API utilities for Laravel backend integration
 
 import { httpDelete, httpGet, httpPatch, httpPost, httpPut } from "@/lib/http"
+import type { Notification, Schedule, PointOfInterest } from "@/lib/types"
 
 export interface PilgrimRegistration {
   id?: string
@@ -62,29 +63,47 @@ export const apiService = {
   },
 
   // Schedules
-  async getSchedules(): Promise<ApiResponse<any[]>> {
-    const schedules = await httpGet<any[]>("/api/schedules")
+  async getSchedules(): Promise<ApiResponse<Schedule[]>> {
+    const schedules = await httpGet<Schedule[]>("/api/schedules")
     return { data: schedules, success: true, message: "Horaires récupérés" }
   },
 
   // Notifications
-  async getNotifications(): Promise<ApiResponse<any[]>> {
-    const items = await httpGet<any[]>("/api/notifications")
+  async getNotifications(): Promise<ApiResponse<Notification[]>> {
+    const items = await httpGet<Notification[]>("/api/notifications")
     return { data: items, success: true, message: "Notifications récupérées" }
   },
 
-  async sendNotification(data: { title: string; message: string; type: string }): Promise<ApiResponse<any>> {
-    const created = await httpPost<any>("/api/notifications", data, { withCredentials: true })
+  async sendNotification(data: Pick<Notification, "title" | "message" | "type">): Promise<ApiResponse<Notification>> {
+    const created = await httpPost<Notification>("/api/notifications", data, { withCredentials: true })
     return { data: created, success: true, message: "Notification envoyée" }
   },
 
-  async updateNotification(id: string, data: Partial<{ title: string; message: string; type: string }>) {
-    const updated = await httpPut<any>(`/api/notifications/${id}`, data, { withCredentials: true })
+  async updateNotification(id: string, data: Partial<Notification>) {
+    const updated = await httpPut<Notification>(`/api/notifications/${id}`, data, { withCredentials: true })
     return { data: updated, success: true, message: "Notification mise à jour" }
   },
 
   async deleteNotification(id: string) {
     await httpDelete(`/api/notifications/${id}`, { withCredentials: true })
     return { data: null, success: true, message: "Notification supprimée" }
+  },
+
+  // Points of Interest
+  async getPointsOfInterest(): Promise<ApiResponse<PointOfInterest[]>> {
+    const items = await httpGet<PointOfInterest[]>("/api/points-of-interest")
+    return { data: items, success: true, message: "Points d'intérêt récupérés" }
+  },
+  async createPointOfInterest(data: Omit<PointOfInterest, "id">) {
+    const created = await httpPost<PointOfInterest>("/api/points-of-interest", data, { withCredentials: true })
+    return { data: created, success: true, message: "Point d'intérêt créé" }
+  },
+  async updatePointOfInterest(id: string, data: Partial<PointOfInterest>) {
+    const updated = await httpPut<PointOfInterest>(`/api/points-of-interest/${id}`, data, { withCredentials: true })
+    return { data: updated, success: true, message: "Point d'intérêt mis à jour" }
+  },
+  async deletePointOfInterest(id: string) {
+    await httpDelete(`/api/points-of-interest/${id}`, { withCredentials: true })
+    return { data: null, success: true, message: "Point d'intérêt supprimé" }
   },
 }

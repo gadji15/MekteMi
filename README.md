@@ -6,7 +6,7 @@
 
 **Application web progressive pour la communauté Mouride lors du Magal de Touba**
 
-[![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-14.2.16-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
 [![PWA](https://img.shields.io/badge/PWA-Ready-green?style=for-the-badge)](https://web.dev/progressive-web-apps/)
@@ -27,7 +27,7 @@
 - [🎨 Design System](#-design-system)
 - [📊 Architecture](#-architecture)
 - [🔐 Authentification](#-authentification)
-- [🌐 API Routes](#-api-routes)
+- [🌐 API](#-api)
 - [📱 PWA Features](#-pwa-features)
 - [🎯 SEO & Performance](#-seo--performance)
 - [🤝 Contribution](#-contribution)
@@ -64,66 +64,40 @@ Faciliter l'expérience spirituelle des pèlerins en fournissant un accès rapid
 ### 👥 **Inscription Pèlerin**
 - Formulaire d'inscription sécurisé et intuitif
 - Validation en temps réel des données
-- Génération automatique de QR codes
 - Suivi du statut d'inscription
 
 ### 🔔 **Système de Notifications**
-- Notifications push en temps réel
 - Annonces officielles du Magal
-- Alertes météorologiques
-- Rappels personnalisés
+- Alertes et informations importantes
+- Affichage responsive
 
 ### 🗺️ **Points d'Intérêt**
-- Carte interactive des lieux saints
-- Géolocalisation et navigation
-- Informations historiques détaillées
-- Photos et descriptions complètes
-
-### 📅 **Programme Complet**
-- Planning détaillé des cérémonies
-- Événements culturels et spirituels
-- Conférences et enseignements
-- Activités communautaires
-
-### 🧭 **Direction Qibla**
-- Boussole numérique précise
-- Calcul automatique basé sur la géolocalisation
-- Interface intuitive et responsive
-- Fonctionnement hors ligne
+- Liste des lieux clés (mosquées, santé, transport, restauration, hébergement)
+- Informations pratiques (horaires d'ouverture, adresse, téléphone)
 
 ### 👨‍💼 **Interface Administrateur**
-- Dashboard de gestion complet
-- Gestion des utilisateurs et inscriptions
-- Création et diffusion de notifications
-- Statistiques et analytics avancés
+- Accès protégé (auth Sanctum)
+- Gestion des inscriptions, notifications, points d'intérêt (via API)
 
 ---
 
 ## 🚀 Technologies
 
 ### **Frontend**
-- **Next.js 15** - Framework React avec App Router
-- **TypeScript** - Typage statique pour une meilleure robustesse
-- **Tailwind CSS v4** - Framework CSS utilitaire moderne
-- **Shadcn/ui** - Composants UI accessibles et customisables
-- **Lucide React** - Icônes SVG optimisées
+- **Next.js 14.2.16** - App Router (React 18)
+- **TypeScript** - Typage strict
+- **Tailwind CSS v4** + **shadcn/ui**
+- **Axios** - Communication HTTP (exigence académique)
 
-### **Backend & Base de Données**
-- **Next.js API Routes** - API serverless intégrée
-- **Supabase** (optionnel) - Base de données PostgreSQL
-- **Vercel KV** (optionnel) - Cache Redis pour les performances
+### **Backend**
+- **Laravel** (API REST)
+- **Sanctum** - Authentification cookie (SPA)
+- **Eloquent** - ORM, migrations & seeders
 
 ### **PWA & Performance**
-- **Service Worker** - Cache intelligent et fonctionnement hors ligne
-- **Web App Manifest** - Installation native sur mobile/desktop
-- **Vercel Analytics** - Monitoring des performances
-- **Image Optimization** - Optimisation automatique des images
-
-### **Développement**
-- **ESLint & Prettier** - Qualité et formatage du code
-- **Husky** - Git hooks pour la qualité
-- **TypeScript Strict Mode** - Vérifications strictes
-- **Geist Font** - Typographie moderne et lisible
+- **Service Worker** custom
+- **Web App Manifest**
+- **Vercel Analytics**
 
 ---
 
@@ -149,21 +123,13 @@ git clone https://github.com/quantiksense/mbektemi.git
 cd mbektemi
 
 # Installer les dépendances
-npm install
-# ou
-yarn install
-# ou
-pnpm install
+pnpm install # ou npm install / yarn install
 
 # Lancer le serveur de développement
-npm run dev
-# ou
-yarn dev
-# ou
-pnpm dev
+pnpm dev     # ou npm run dev / yarn dev
 \`\`\`
 
-Ouvrez [http://localhost:3000](http://localhost:3000) dans votre navigateur.
+Ouvrez [http://localhost:3000](http://localhost:3000).
 
 ---
 
@@ -172,352 +138,135 @@ Ouvrez [http://localhost:3000](http://localhost:3000) dans votre navigateur.
 ### **Scripts Disponibles**
 
 \`\`\`bash
-# Développement
 npm run dev          # Serveur de développement
 npm run build        # Build de production
 npm run start        # Serveur de production
-npm run lint         # Vérification ESLint
-npm run type-check   # Vérification TypeScript
+npm run lint         # ESLint
 \`\`\`
 
 ### **Structure du Projet**
 
 \`\`\`
 mbektemi/
-├── app/                    # App Router (Next.js 15)
-│   ├── (auth)/            # Groupe de routes authentification
-│   ├── admin/             # Interface administrateur
-│   ├── api/               # API Routes
-│   ├── globals.css        # Styles globaux et animations
-│   ├── layout.tsx         # Layout principal
-│   └── page.tsx           # Page d'accueil
-├── components/            # Composants réutilisables
-│   ├── ui/               # Composants UI (Shadcn)
-│   ├── custom-icons.tsx  # Icônes personnalisées
-│   ├── footer.tsx        # Footer de l'application
-│   └── navigation.tsx    # Navigation principale
-├── contexts/             # Contextes React
-├── hooks/                # Hooks personnalisés
-├── lib/                  # Utilitaires et configurations
-├── public/               # Assets statiques
-│   ├── icons/           # Icônes PWA
-│   ├── manifest.json    # Manifest PWA
-│   └── sw.js           # Service Worker
-└── types/               # Définitions TypeScript
+├── app/                    # App Router (Next.js)
+├── components/             # Composants réutilisables (shadcn/ui)
+├── contexts/               # Contextes React (auth)
+├── lib/                    # Axios HTTP client, config, services
+├── mbektemi-api/           # Backend Laravel (API REST)
+├── public/                 # Assets statiques, manifest, sw.js
+└── styles/                 # Tailwind v4 & thèmes
 \`\`\`
 
 ### **Variables d'Environnement**
 
-Créez un fichier `.env.local` :
-
+Frontend `.env.local` :
 \`\`\`env
-# Base de données (optionnel)
-DATABASE_URL="your_database_url"
-NEXT_PUBLIC_SUPABASE_URL="your_supabase_url"
-NEXT_PUBLIC_SUPABASE_ANON_KEY="your_supabase_anon_key"
-
-# Analytics
-NEXT_PUBLIC_VERCEL_ANALYTICS_ID="your_analytics_id"
-
-# PWA
-NEXT_PUBLIC_APP_URL="https://mbektemi.vercel.app"
+NEXT_PUBLIC_API_BASE_URL="http://localhost:8000"
+NEXT_PUBLIC_API_TIMEOUT="10000"
 \`\`\`
 
----
-
-## 🎨 Design System
-
-### **Palette de Couleurs**
-
-\`\`\`css
-/* Couleurs Principales */
---primary: #10b981      /* Emerald-600 - Spiritualité */
---secondary: #059669    /* Emerald-700 - Accents */
---accent: #34d399       /* Emerald-400 - Highlights */
-
-/* Couleurs Neutres */
---background: #ffffff   /* Blanc pur */
---foreground: #64748b   /* Slate-500 - Texte */
---muted: #f1f5f9       /* Slate-100 - Sections */
---border: #e2e8f0      /* Slate-200 - Bordures */
-\`\`\`
-
-### **Typographie**
-
-- **Font Principal** : Geist Sans (Variable)
-- **Font Monospace** : Geist Mono (Variable)
-- **Échelle** : 12px → 14px → 16px → 18px → 24px → 32px → 48px
-
-### **Espacements**
-
-- **Base** : 4px (0.25rem)
-- **Échelle** : 4px, 8px, 12px, 16px, 24px, 32px, 48px, 64px
-
-### **Animations**
-
-\`\`\`css
-/* Animations Personnalisées */
-.animate-float          /* Flottement doux */
-.animate-pulse-glow     /* Pulsation lumineuse */
-.animate-fade-in        /* Apparition en fondu */
-.animate-slide-up       /* Glissement vers le haut */
-.animate-bounce-in      /* Rebond d'entrée */
+Backend Laravel `.env` :
+\`\`\`env
+APP_URL="http://localhost:8000"
+SESSION_DOMAIN="localhost"
+SANCTUM_STATEFUL_DOMAINS="localhost:3000,localhost"
 \`\`\`
 
 ---
 
 ## 📊 Architecture
 
-### **Architecture Générale**
-
-\`\`\`mermaid
-graph TB
-    A[Client Browser] --> B[Next.js App Router]
-    B --> C[React Components]
-    B --> D[API Routes]
-    D --> E[Database]
-    D --> F[External APIs]
-    C --> G[Tailwind CSS]
-    C --> H[Shadcn/ui]
-    A --> I[Service Worker]
-    I --> J[Cache Storage]
-\`\`\`
-
-### **Flux de Données**
-
-1. **Client** → Requête utilisateur
-2. **Next.js Router** → Routage et rendu
-3. **React Components** → Interface utilisateur
-4. **API Routes** → Logique métier
-5. **Database/Cache** → Persistance des données
-
-### **Patterns Utilisés**
-
-- **Server Components** - Rendu côté serveur par défaut
-- **Client Components** - Interactivité côté client
-- **API Routes** - Endpoints serverless
-- **Context Pattern** - Gestion d'état global
-- **Custom Hooks** - Logique réutilisable
+- Frontend React (Next.js) <—Axios—> API Laravel (Sanctum)
+- Rendu côté client pour les pages data-driven (horaires, notifications, points d’intérêt)
+- Protection /admin côté client et côté API via Sanctum
 
 ---
 
 ## 🔐 Authentification
 
-### **Système d'Auth**
-
-\`\`\`typescript
-// Context d'authentification
-interface AuthContext {
-  user: User | null
-  login: (email: string, password: string) => Promise<void>
-  logout: () => Promise<void>
-  register: (userData: RegisterData) => Promise<void>
-  isLoading: boolean
-}
-\`\`\`
-
-### **Protection des Routes**
-
-\`\`\`typescript
-// Middleware de protection
-export function withAuth(Component: React.ComponentType) {
-  return function AuthenticatedComponent(props: any) {
-    const { user, isLoading } = useAuth()
-    
-    if (isLoading) return <LoadingSpinner />
-    if (!user) return <LoginForm />
-    
-    return <Component {...props} />
-  }
-}
-\`\`\`
-
-### **Rôles et Permissions**
-
-- **Utilisateur** : Consultation, inscription
-- **Pèlerin** : Fonctionnalités étendues
-- **Modérateur** : Gestion du contenu
-- **Administrateur** : Accès complet
+- Sanctum SPA cookie (CSRF + credentials)
+- Endpoints: POST /api/auth/login, POST /api/auth/register, POST /api/auth/logout, GET /api/auth/me
+- Rôle démo: admin si email == admin@mbektemi.sn (sinon pilgrim)
 
 ---
 
-## 🌐 API Routes
+## 🌐 API
 
 ### **Endpoints Disponibles**
 
-\`\`\`typescript
-// Authentification
-POST /api/auth/login
+\`\`\`text
+# Auth (SPA)
 POST /api/auth/register
+POST /api/auth/login
 POST /api/auth/logout
 GET  /api/auth/me
 
-// Pèlerins
-GET    /api/pilgrims
-POST   /api/pilgrims
-PUT    /api/pilgrims/[id]
-DELETE /api/pilgrims/[id]
+# Pèlerins
+GET    /api/pilgrims           (protégé)
+POST   /api/pilgrims           (public)
+PATCH  /api/pilgrims/{id}      (protégé)
+DELETE /api/pilgrims/{id}      (protégé)
 
-// Notifications
-GET    /api/notifications
-POST   /api/notifications
-PUT    /api/notifications/[id]
-DELETE /api/notifications/[id]
+# Notifications
+GET    /api/notifications      (public)
+POST   /api/notifications      (protégé)
+PUT    /api/notifications/{id} (protégé)
+DELETE /api/notifications/{id} (protégé)
 
-// Horaires
-GET /api/prayer-times
-GET /api/events
+# Horaires
+GET /api/schedules             (public)
 
-// Points d'intérêt
-GET /api/points-of-interest
-\`\`\`
-
-### **Format des Réponses**
-
-\`\`\`typescript
-interface ApiResponse<T> {
-  success: boolean
-  data?: T
-  error?: string
-  message?: string
-}
+# Points d'intérêt
+GET    /api/points-of-interest                 (public)
+POST   /api/points-of-interest                 (protégé)
+PUT    /api/points-of-interest/{id}            (protégé)
+DELETE /api/points-of-interest/{id}            (protégé)
 \`\`\`
 
 ---
 
 ## 📱 PWA Features
 
-### **Fonctionnalités PWA**
-
-- ✅ **Installation** - Ajout à l'écran d'accueil
-- ✅ **Offline** - Fonctionnement sans connexion
-- ✅ **Push Notifications** - Notifications natives
-- ✅ **Background Sync** - Synchronisation en arrière-plan
-- ✅ **Responsive** - Adaptation à tous les écrans
-
-### **Service Worker**
-
-\`\`\`javascript
-// Cache Strategy
-const CACHE_NAME = 'mbektemi-v1'
-const STATIC_ASSETS = [
-  '/',
-  '/horaires',
-  '/inscription',
-  '/notifications'
-]
-
-// Cache First Strategy pour les assets statiques
-// Network First Strategy pour les données dynamiques
-\`\`\`
-
-### **Manifest PWA**
-
-\`\`\`json
-{
-  "name": "MbekteMi - Application Communautaire",
-  "short_name": "MbekteMi",
-  "description": "Application pour la communauté Mouride",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#10b981",
-  "theme_color": "#10b981",
-  "orientation": "portrait"
-}
-\`\`\`
+- **Installation** (mobile/desktop)
+- **Offline** (assets statiques)
+- **Responsive** (mobile-first)
 
 ---
 
 ## 🎯 SEO & Performance
 
-### **Optimisations SEO**
-
-- **Métadonnées** - Titre, description, Open Graph
-- **Schema.org** - Données structurées
-- **Sitemap** - Plan du site automatique
-- **Robots.txt** - Instructions pour les crawlers
-
-### **Performance**
-
-- **Core Web Vitals** - Optimisation des métriques clés
-- **Image Optimization** - Next.js Image component
-- **Code Splitting** - Chargement à la demande
-- **Bundle Analysis** - Analyse de la taille des bundles
-
-### **Scores Lighthouse**
-
-- 🟢 **Performance** : 95+
-- 🟢 **Accessibility** : 100
-- 🟢 **Best Practices** : 100
-- 🟢 **SEO** : 100
+- Métadonnées, Open Graph, manifest
+- Tailwind + shadcn/ui
+- Optimisations visuelles (animations, gradients)
 
 ---
 
 ## 🤝 Contribution
 
-### **Comment Contribuer**
-
-1. **Fork** le projet
-2. **Créer** une branche feature (`git checkout -b feature/AmazingFeature`)
-3. **Commit** vos changements (`git commit -m 'Add AmazingFeature'`)
-4. **Push** vers la branche (`git push origin feature/AmazingFeature`)
-5. **Ouvrir** une Pull Request
-
-### **Guidelines**
-
-- Suivre les conventions de code existantes
-- Ajouter des tests pour les nouvelles fonctionnalités
-- Mettre à jour la documentation si nécessaire
-- Respecter les principes d'accessibilité
-
-### **Code de Conduite**
-
-Ce projet adhère au [Code de Conduite Contributor Covenant](CODE_OF_CONDUCT.md). En participant, vous vous engagez à respecter ce code.
+- GitHub flow (branche, PR)
+- Respect des conventions de code
+- Documentation à jour
 
 ---
 
 ## 📞 Contact
 
-### **Équipe de Développement**
-
 **QuantikSense** - Développement et Maintenance
-- 📧 Email : [quantiksense@gmail.com](mailto:quantiksense@gmail.com)
-- 📱 Téléphone : [+221 78 478 28 50](tel:+221784782850)
-- 🌐 Website : [quantiksense.com](https://quantiksense.com)
-
-### **Support Utilisateur**
-
-- 💬 **Chat en direct** : Disponible sur l'application
-- 📧 **Email Support** : support@mbektemi.app
-- 📱 **WhatsApp** : +221 78 478 28 50
-- 🕐 **Horaires** : 24/7 pendant le Magal
-
-### **Réseaux Sociaux**
-
-- 📘 [Facebook](https://facebook.com/mbektemi)
-- 📸 [Instagram](https://instagram.com/mbektemi)
-- 🐦 [Twitter](https://twitter.com/mbektemi)
-- 💼 [LinkedIn](https://linkedin.com/company/mbektemi)
+- 📧 [quantiksense@gmail.com](mailto:quantiksense@gmail.com)
+- 📱 +221 78 478 28 50
+- 🌐 https://quantiksense.com
 
 ---
 
 ## 📄 Licence
 
-Ce projet est sous licence **MIT** - voir le fichier [LICENSE](LICENSE) pour plus de détails.
-
-### **Utilisation Commerciale**
-
-L'utilisation commerciale est autorisée sous les termes de la licence MIT. Cependant, nous encourageons les utilisateurs à contribuer aux améliorations de l'application pour le bénéfice de toute la communauté.
-
----
+Sous licence **MIT**.
 
 <div align="center">
 
 **Fait avec ❤️ pour la communauté Mouride**
 
 [⬆️ Retour en haut](#-mbektemi---application-communautaire)
-
----
 
 *MbekteMi - Connecter la spiritualité à la technologie moderne*
 
