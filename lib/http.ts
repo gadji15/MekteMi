@@ -1,5 +1,5 @@
 // Axios-based HTTP client for Laravel API integration (meets academic requirement)
-import axios, { type AxiosRequestConfig } from "axios"
+import axios, { type AxiosRequestConfig, type Method } from "axios"
 import { config } from "@/lib/config"
 
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE"
@@ -7,7 +7,7 @@ type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE"
 interface HttpOptions {
   method?: HttpMethod
   headers?: Record<string, string>
-  body?: any
+  body?: unknown
   signal?: AbortSignal
   absolute?: boolean
   withCredentials?: boolean
@@ -103,7 +103,7 @@ export async function fetchCsrfCookie(): Promise<void> {
 export async function http<T = unknown>(path: string, options: HttpOptions = {}): Promise<T> {
   const cfg: AxiosRequestConfig = {
     url: buildUrl(path, options.absolute),
-    method: (options.method || "GET") as any,
+    method: (options.method || "GET") as Method,
     headers: options.headers,
     data: options.body,
     signal: options.signal,
@@ -117,13 +117,13 @@ export async function http<T = unknown>(path: string, options: HttpOptions = {})
 export const httpGet = <T = unknown>(path: string, options?: Omit<HttpOptions, "method" | "body">) =>
   http<T>(path, { ...options, method: "GET" })
 
-export const httpPost = <T = unknown>(path: string, body?: any, options?: Omit<HttpOptions, "method">) =>
+export const httpPost = <T = unknown>(path: string, body?: unknown, options?: Omit<HttpOptions, "method">) =>
   http<T>(path, { ...options, method: "POST", body })
 
-export const httpPut = <T = unknown>(path: string, body?: any, options?: Omit<HttpOptions, "method">) =>
+export const httpPut = <T = unknown>(path: string, body?: unknown, options?: Omit<HttpOptions, "method">) =>
   http<T>(path, { ...options, method: "PUT", body })
 
-export const httpPatch = <T = unknown>(path: string, body?: any, options?: Omit<HttpOptions, "method">) =>
+export const httpPatch = <T = unknown>(path: string, body?: unknown, options?: Omit<HttpOptions, "method">) =>
   http<T>(path, { ...options, method: "PATCH", body })
 
 export const httpDelete = <T = unknown>(path: string, options?: Omit<HttpOptions, "method" | "body">) =>
