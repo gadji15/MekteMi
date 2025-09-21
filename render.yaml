@@ -78,7 +78,7 @@ services:
       # - key: MAIL_FROM_ADDRESS
       #   value: no-reply@mbektemi.sn
       # - key: MAIL_FROM_NAME
-      #   value: MbekteMi
+      #   value: MbekteMi 
 
 # Usage:
 # 1) Commit this file, push to GitHub.
