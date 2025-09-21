@@ -15,5 +15,8 @@ php artisan migrate --force || true
 # Ensure storage symlink exists
 php artisan storage:link || true
 
-# Finally, start the web server stack managed by the base image
-exec /entrypoint supervisord
+# Determine port (Render provides $PORT, default to 10000 if not set)
+PORT_TO_BIND="${PORT:-10000}"
+
+echo "Starting PHP built-in server on 0.0.0.0:${PORT_TO_BIND}"
+exec php -S 0.0.0.0:${PORT_TO_BIND} -t public public/index.php
