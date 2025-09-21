@@ -15,11 +15,11 @@ export interface Pilgrim {
 export interface Schedule {
   id: string
   title: string
-  description: string
-  startTime: Date
-  endTime: Date
-  location: string
-  type: "prayer" | "event" | "ceremony"
+  description?: string
+  startTime: Date | string
+  endTime?: Date | string
+  location?: string
+  type?: "prayer" | "event" | "ceremony"
 }
 
 export interface Notification {
@@ -27,20 +27,21 @@ export interface Notification {
   title: string
   message: string
   type: "info" | "warning" | "urgent"
-  createdAt: Date
-  isRead: boolean
+  createdAt: Date | string
+  isRead?: boolean
 }
 
 export interface PointOfInterest {
   id: string
   name: string
-  description: string
-  address: string
-  latitude: number
-  longitude: number
+  description?: string
+  address?: string
+  latitude?: number
+  longitude?: number
   category: "mosque" | "accommodation" | "food" | "transport" | "medical" | "other"
-  isOpen: boolean
+  isOpen?: boolean
   openingHours?: string
+  phone?: string
 }
 
 export interface User {
@@ -49,5 +50,5 @@ export interface User {
   firstName: string
   lastName: string
   role: "pilgrim" | "admin" | "volunteer"
-  createdAt: Date
+  createdAt: Date | string
 }
