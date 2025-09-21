@@ -10,19 +10,9 @@ import { apiService } from "@/lib/api"
 import { MapPin, Plus, Save, Trash2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import type { PointOfInterest } from "@/lib/types"
 
-type Poi = {
-  id: string
-  name: string
-  description?: string
-  address?: string
-  latitude?: number
-  longitude?: number
-  category: "mosque" | "accommodation" | "food" | "transport" | "medical" | "other" | string
-  isOpen?: boolean
-  openingHours?: string
-  phone?: string
-}
+type Poi = PointOfInterest
 
 const categories = [
   { value: "mosque", label: "Mosquée" },
@@ -209,7 +199,7 @@ export default function AdminPointsInterestPage() {
                     <select
                       className="h-10 px-3 rounded-md border bg-background"
                       value={editing.category}
-                      onChange={(e) => setEditing({ ...editing, category: e.target.value })}
+                      onChange={(e) => setEditing({ ...editing, category: e.target.value as PointOfInterest["category"] })}
                     >
                       {categories.map((c) => (
                         <option key={c.value} value={c.value}>
