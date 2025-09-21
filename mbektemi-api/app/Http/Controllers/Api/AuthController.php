@@ -13,8 +13,14 @@ class AuthController extends Controller
 {
     protected function resolveRole(User $user): string
     {
-        // Simple academic rule: special admin account by email, otherwise pilgrim
-        return strtolower($user->email) === 'admin@mbektemi.sn' ? 'admin' : 'pilgrim';
+        // Admin list can be configured via env ADMIN_EMAILS (comma-separated), defaults to admin@mbektemi.sn
+        $configured = env('ADMIN_EMAILS', 'admin@mbektemi.sn');
+        $admins = array_filter(array_map(
+            fn ($e) => strtolower(trim($e)),
+            explode(',', (string) $configured)
+        ));
+
+        return in_array(strtolower($user->email), $admins, true) ? 'admin' : 'pilgrim';
     }
 
     public function register(Request $request)
