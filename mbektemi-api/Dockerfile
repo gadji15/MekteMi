@@ -3,6 +3,9 @@
 FROM webdevops/php-nginx:8.3-alpine
 
 ENV WEB_DOCUMENT_ROOT=/var/www/html/public
+ENV PHP_DATE_TIMEZONE=Africa/Dakar
+ENV COMPOSER_ALLOW_SUPERUSER=1
+
 WORKDIR /var/www/html
 
 # System deps and PHP extensions
@@ -15,10 +18,15 @@ RUN wget -qO /usr/local/bin/composer https://getcomposer.org/composer-stable.pha
 
 # Copy composer files and install dependencies first (better caching)
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress
+# Install without scripts because artisan isn't present yet
+RUN composer install --no-dev --no-interaction --no-progress --no-scripts
 
 # Copy the application code
 COPY . .
+
+# Now that artisan exists, run autoload optimization and package discovery
+RUN composer dump-autoload -o \
+ && php artisan package:discover --ansi || true
 
 # Prepare permissions and entrypoint
 RUN chown -R application:application /var/www/html \
@@ -26,8 +34,6 @@ RUN chown -R application:application /var/www/html \
  && chown -R application:application storage bootstrap/cache \
  && chmod -R ug+rwX storage bootstrap/cache \
  && chmod +x docker-entrypoint.sh
-
-ENV PHP_DATE_TIMEZONE=Africa/Dakar
 
 EXPOSE 8080
 
