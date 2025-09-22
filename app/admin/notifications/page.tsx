@@ -201,7 +201,7 @@ export default function AdminNotificationsPage() {
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-card to-muted/30 border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+        <Card className="bg-gradient-to-br from-card to muted/30 border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
