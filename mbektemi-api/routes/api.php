@@ -5,6 +5,7 @@ use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\PilgrimController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PointOfInterestController;
+use App\Http\Controllers\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -35,6 +36,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/pilgrims',         [PilgrimController::class, 'index']);
     Route::patch('/pilgrims/{id}',  [PilgrimController::class, 'update']);
     Route::delete('/pilgrims/{id}', [PilgrimController::class, 'destroy']);
+
+    /* ------------------------------ Users ------------------------------- */
+    Route::get('/users',        [UserController::class, 'index']);
+    Route::patch('/users/{id}', [UserController::class, 'update']);
+    Route::delete('/users/{id}',[UserController::class, 'destroy']);
 
     /* --------------------------- Notifications -------------------------- */
     Route::post('/notifications',          [NotificationController::class, 'store']);

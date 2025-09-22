@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -9,116 +10,149 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Bell, Send, Plus, Clock, Users, Edit, Trash2, MoreHorizontal, X, AlertCircle } from "lucide-react"
+import { Bell, Send, Plus, Clock, Edit, Trash2, MoreHorizontal, X, AlertCircle } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { apiService } from "@/lib/api"
+import { toast } from "sonner"
+import { useAuth } from "@/contexts/auth-context"
 
-interface Notification {
+type NotifType = "info" | "warning" | "urgent"
+
+interface UiNotification {
   id: string
   title: string
   message: string
-  type: "info" | "warning" | "urgent"
-  status: "draft" | "sent" | "scheduled"
-  recipients: number
+  type: NotifType
   createdAt: string
-  sentAt?: string
 }
 
 export default function AdminNotificationsPage() {
-  const [notifications, setNotifications] = useState<Notification[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [showCreateForm, setShowCreateForm] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const { user, isLoading: authLoading } = useAuth()
+  const router = useRouter()
+
+  const [items, setItems] = useState<UiNotification[]>([])
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
-  const [newNotification, setNewNotification] = useState({
+  const [showForm, setShowForm] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [editing, setEditing] = useState<UiNotification | null>(null)
+  const [form, setForm] = useState<{ title: string; message: string; type: NotifType }>({
     title: "",
     message: "",
-    type: "info" as const,
+    type: "info",
   })
 
-  // Mock data
   useEffect(() => {
-    const mockNotifications: Notification[] = [
-      {
-        id: "1",
-        title: "Changement d'horaire - Cérémonie d'ouverture",
-        message: "La cérémonie d'ouverture du Magal a été avancée à 8h30 au lieu de 9h00.",
-        type: "warning",
-        status: "sent",
-        recipients: 1247,
-        createdAt: "2025-01-15T10:30:00",
-        sentAt: "2025-01-15T10:35:00",
-      },
-      {
-        id: "2",
-        title: "Nouvelles mesures de sécurité",
-        message: "Pour assurer la sécurité de tous les pèlerins, des contrôles supplémentaires seront effectués.",
-        type: "urgent",
-        status: "sent",
-        recipients: 1247,
-        createdAt: "2025-01-15T08:15:00",
-        sentAt: "2025-01-15T08:20:00",
-      },
-      {
-        id: "3",
-        title: "Rappel - Inscription obligatoire",
-        message: "N'oubliez pas de vous inscrire avant la date limite du 20 janvier.",
-        type: "info",
-        status: "draft",
-        recipients: 0,
-        createdAt: "2025-01-14T16:45:00",
-      },
-    ]
+    if (!authLoading && (!user || user.role !== "admin")) {
+      router.push("/auth/login")
+    }
+  }, [user, authLoading, router])
 
-    setTimeout(() => {
-      setNotifications(mockNotifications)
-      setIsLoading(false)
-    }, 1000)
-  }, [])
+  const fetchAll = async () => {
+    try {
+      setLoading(true)
+      const res = await apiService.getNotifications()
+      const normalized =
+        (res.data || []).map((n: any) => ({
+          id: String(n.id),
+          title: n.title,
+          message: n.message,
+          type: (n.type as NotifType) || "info",
+          createdAt: new Date(n.createdAt ?? n.created_at ?? Date.now()).toISOString(),
+        })) ?? []
+      setItems(normalized)
+    } catch (e: any) {
+      if (e?.status === 401) {
+        router.push("/auth/login")
+        return
+      }
+      setError(e instanceof Error ? e.message : "Erreur de chargement")
+    } finally {
+      setLoading(false)
+    }
+  }
 
-  const handleCreateNotification = async () => {
-    if (!newNotification.title || !newNotification.message) {
+  useEffect(() => {
+    if (user && user.role === "admin") {
+      fetchAll()
+    }
+  }, [user])
+
+  const stats = useMemo(
+    () => ({
+      total: items.length,
+      info: items.filter((n) => n.type === "info").length,
+      warning: items.filter((n) => n.type === "warning").length,
+      urgent: items.filter((n) => n.type === "urgent").length,
+    }),
+    [items],
+  )
+
+  const startCreate = () => {
+    setEditing(null)
+    setForm({ title: "", message: "", type: "info" })
+    setShowForm(true)
+  }
+
+  const startEdit = (n: UiNotification) => {
+    setEditing(n)
+    setForm({ title: n.title, message: n.message, type: n.type })
+    setShowForm(true)
+  }
+
+  const handleSubmit = async () => {
+    if (!form.title.trim() || !form.message.trim()) {
       setError("Veuillez remplir tous les champs obligatoires")
       return
     }
-
-    setIsSubmitting(true)
-    setError("")
-
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      const notification: Notification = {
-        id: Date.now().toString(),
-        ...newNotification,
-        status: "draft",
-        recipients: 0,
-        createdAt: new Date().toISOString(),
+      setSubmitting(true)
+      setError("")
+      if (editing) {
+        await apiService.updateNotification(editing.id, {
+          title: form.title.trim(),
+          message: form.message.trim(),
+          type: form.type,
+        })
+        toast.success("Notification mise à jour")
+      } else {
+        await apiService.sendNotification({
+          title: form.title.trim(),
+          message: form.message.trim(),
+          type: form.type,
+        })
+        toast.success("Notification créée")
       }
-
-      setNotifications([notification, ...notifications])
-      setNewNotification({ title: "", message: "", type: "info" })
-      setShowCreateForm(false)
-    } catch (err) {
-      setError("Une erreur est survenue lors de la création")
+      setShowForm(false)
+      setEditing(null)
+      await fetchAll()
+    } catch (e: any) {
+      if (e?.status === 401) {
+        router.push("/auth/login")
+        return
+      }
+      setError(e instanceof Error ? e.message : "Enregistrement impossible")
     } finally {
-      setIsSubmitting(false)
+      setSubmitting(false)
     }
   }
 
-  const handleInputChange = (field: string, value: string) => {
-    setNewNotification((prev) => ({ ...prev, [field]: value }))
-    if (error) setError("")
+  const handleDelete = async (id: string) => {
+    if (!confirm("Supprimer cette notification ?")) return
+    try {
+      await apiService.deleteNotification(id)
+      toast.success("Notification supprimée")
+      await fetchAll()
+    } catch (e: any) {
+      if (e?.status === 401) {
+        router.push("/auth/login")
+        return
+      }
+      toast.error(e instanceof Error ? e.message : "Suppression impossible")
+    }
   }
 
-  const stats = {
-    total: notifications.length,
-    sent: notifications.filter((n) => n.status === "sent").length,
-    drafts: notifications.filter((n) => n.status === "draft").length,
-    totalRecipients: notifications.filter((n) => n.status === "sent").reduce((sum, n) => sum + n.recipients, 0),
-  }
-
-  if (isLoading) {
+  if (authLoading || loading) {
     return (
       <div className="p-6">
         <div className="animate-pulse space-y-6">
@@ -133,6 +167,10 @@ export default function AdminNotificationsPage() {
     )
   }
 
+  if (!user || user.role !== "admin") {
+    return null
+  }
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -142,7 +180,7 @@ export default function AdminNotificationsPage() {
           <p className="text-muted-foreground text-lg">Créez et gérez les notifications pour les pèlerins</p>
         </div>
         <Button
-          onClick={() => setShowCreateForm(true)}
+          onClick={startCreate}
           className="cursor-pointer bg-gradient-to-r from-primary to-secondary hover:from-secondary hover:to-primary transition-all duration-300 hover:scale-105"
         >
           <Plus className="w-4 h-4 mr-2" />
@@ -168,56 +206,65 @@ export default function AdminNotificationsPage() {
         <Card className="bg-gradient-to-br from-card to-muted/30 border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                <Send className="w-5 h-5 text-green-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{stats.sent}</p>
-                <p className="text-sm text-muted-foreground">Envoyées</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-card to-muted/30 border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
-                <Edit className="w-5 h-5 text-gray-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{stats.drafts}</p>
-                <p className="text-sm text-muted-foreground">Brouillons</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-card to-muted/30 border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
               <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                <Users className="w-5 h-5 text-blue-600" />
+                <Bell className="w-5 h-5 text-blue-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{stats.totalRecipients.toLocaleString()}</p>
-                <p className="text-sm text-muted-foreground">Destinataires</p>
+                <p className="text-2xl font-bold">{stats.info}</p>
+                <p className="text-sm text-muted-foreground">Info</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-br from-card to-muted/30 border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                <Bell className="w-5 h-5 text-orange-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{stats.warning}</p>
+                <p className="text-sm text-muted-foreground">Important</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-br from-card to muted/30 border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                <Bell className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{stats.urgent}</p>
+                <p className="text-sm text-muted-foreground">Urgent</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Create Form */}
-      {showCreateForm && (
+      {/* Create/Edit Form */}
+      {showForm && (
         <Card className="bg-gradient-to-br from-card to-muted/30 border-0 shadow-lg animate-slide-up">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle className="text-2xl">Nouvelle notification</CardTitle>
-              <CardDescription>Créez une nouvelle notification pour les pèlerins</CardDescription>
+              <CardTitle className="text-2xl">
+                {editing ? "Modifier la notification" : "Nouvelle notification"}
+              </CardTitle>
+              <CardDescription>
+                {editing
+                  ? "Mettez à jour la notification sélectionnée"
+                  : "Créez une nouvelle notification pour les pèlerins"}
+              </CardDescription>
             </div>
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setShowCreateForm(false)}
+              onClick={() => {
+                setShowForm(false)
+                setEditing(null)
+              }}
               className="cursor-pointer hover:bg-destructive/10 hover:text-destructive transition-colors"
             >
               <X className="w-4 h-4" />
@@ -238,9 +285,9 @@ export default function AdminNotificationsPage() {
               <Input
                 id="title"
                 placeholder="Titre de la notification"
-                value={newNotification.title}
-                onChange={(e) => handleInputChange("title", e.target.value)}
-                disabled={isSubmitting}
+                value={form.title}
+                onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
+                disabled={submitting}
                 className="h-12 border-border/50 focus:border-primary transition-all duration-300 focus:scale-[1.02]"
               />
             </div>
@@ -253,12 +300,12 @@ export default function AdminNotificationsPage() {
                 id="message"
                 placeholder="Contenu détaillé de la notification"
                 rows={4}
-                value={newNotification.message}
-                onChange={(e) => handleInputChange("message", e.target.value)}
-                disabled={isSubmitting}
+                value={form.message}
+                onChange={(e) => setForm((p) => ({ ...p, message: e.target.value }))}
+                disabled={submitting}
                 className="border-border/50 focus:border-primary resize-none transition-all duration-300 focus:scale-[1.02]"
               />
-              <p className="text-xs text-muted-foreground">{newNotification.message.length}/500 caractères</p>
+              <p className="text-xs text-muted-foreground">{form.message.length}/500 caractères</p>
             </div>
 
             <div className="space-y-3">
@@ -266,9 +313,9 @@ export default function AdminNotificationsPage() {
                 Type de notification
               </Label>
               <Select
-                value={newNotification.type}
-                onValueChange={(value: "info" | "warning" | "urgent") => handleInputChange("type", value)}
-                disabled={isSubmitting}
+                value={form.type}
+                onValueChange={(value: NotifType) => setForm((p) => ({ ...p, type: value }))}
+                disabled={submitting}
               >
                 <SelectTrigger className="h-12 border-border/50 focus:border-primary transition-all duration-300">
                   <SelectValue />
@@ -298,26 +345,29 @@ export default function AdminNotificationsPage() {
 
             <div className="flex flex-col sm:flex-row gap-3 pt-4">
               <Button
-                onClick={handleCreateNotification}
-                disabled={isSubmitting || !newNotification.title || !newNotification.message}
+                onClick={handleSubmit}
+                disabled={submitting || !form.title || !form.message}
                 className="flex-1 h-12 bg-gradient-to-r from-primary to-secondary hover:from-secondary hover:to-primary cursor-pointer transition-all duration-300 hover:scale-105"
               >
-                {isSubmitting ? (
+                {submitting ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-                    Création...
+                    Enregistrement...
                   </>
                 ) : (
                   <>
                     <Plus className="w-4 h-4 mr-2" />
-                    Créer la notification
+                    {editing ? "Mettre à jour" : "Créer la notification"}
                   </>
                 )}
               </Button>
               <Button
                 variant="outline"
-                onClick={() => setShowCreateForm(false)}
-                disabled={isSubmitting}
+                onClick={() => {
+                  setShowForm(false)
+                  setEditing(null)
+                }}
+                disabled={submitting}
                 className="flex-1 h-12 cursor-pointer transition-all duration-300 hover:scale-105"
               >
                 Annuler
@@ -329,9 +379,9 @@ export default function AdminNotificationsPage() {
 
       {/* Notifications List */}
       <div className="space-y-4">
-        {notifications.map((notification, index) => (
+        {items.map((n, index) => (
           <Card
-            key={notification.id}
+            key={n.id}
             className="hover:shadow-lg transition-all duration-300 hover:scale-[1.02] bg-gradient-to-br from-card to-muted/30 border-0 animate-fade-in"
             style={{ animationDelay: `${index * 100}ms` }}
           >
@@ -339,53 +389,24 @@ export default function AdminNotificationsPage() {
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-lg font-semibold">{notification.title}</h3>
+                    <h3 className="text-lg font-semibold">{n.title}</h3>
                     <Badge
                       className={`${
-                        notification.type === "urgent"
+                        n.type === "urgent"
                           ? "bg-red-50 text-red-700 border-red-200"
-                          : notification.type === "warning"
+                          : n.type === "warning"
                             ? "bg-orange-50 text-orange-700 border-orange-200"
                             : "bg-blue-50 text-blue-700 border-blue-200"
                       } transition-all duration-300`}
                     >
-                      {notification.type === "urgent"
-                        ? "Urgent"
-                        : notification.type === "warning"
-                          ? "Important"
-                          : "Information"}
-                    </Badge>
-                    <Badge
-                      className={`${
-                        notification.status === "sent"
-                          ? "bg-green-50 text-green-700 border-green-200"
-                          : notification.status === "scheduled"
-                            ? "bg-blue-50 text-blue-700 border-blue-200"
-                            : "bg-gray-50 text-gray-700 border-gray-200"
-                      } transition-all duration-300`}
-                    >
-                      {notification.status === "sent"
-                        ? "Envoyé"
-                        : notification.status === "scheduled"
-                          ? "Programmé"
-                          : "Brouillon"}
+                      {n.type === "urgent" ? "Urgent" : n.type === "warning" ? "Important" : "Information"}
                     </Badge>
                   </div>
-                  <p className="text-muted-foreground mb-4 leading-relaxed">{notification.message}</p>
+                  <p className="text-muted-foreground mb-4 leading-relaxed">{n.message}</p>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                     <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4 text-primary" />
-                      <span>Créé le {new Date(notification.createdAt).toLocaleDateString("fr-FR")}</span>
-                    </div>
-                    {notification.sentAt && (
-                      <div className="flex items-center gap-2">
-                        <Send className="w-4 h-4 text-green-600" />
-                        <span>Envoyé le {new Date(notification.sentAt).toLocaleDateString("fr-FR")}</span>
-                      </div>
-                    )}
-                    <div className="flex items-center gap-2">
-                      <Users className="w-4 h-4 text-blue-600" />
-                      <span>{notification.recipients.toLocaleString()} destinataires</span>
+                      <span>Créé le {new Date(n.createdAt).toLocaleDateString("fr-FR")}</span>
                     </div>
                   </div>
                 </div>
@@ -396,17 +417,11 @@ export default function AdminNotificationsPage() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    {notification.status === "draft" && (
-                      <DropdownMenuItem className="cursor-pointer">
-                        <Send className="w-4 h-4 mr-2" />
-                        Envoyer
-                      </DropdownMenuItem>
-                    )}
-                    <DropdownMenuItem className="cursor-pointer">
+                    <DropdownMenuItem className="cursor-pointer" onClick={() => startEdit(n)}>
                       <Edit className="w-4 h-4 mr-2" />
                       Modifier
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="cursor-pointer text-destructive">
+                    <DropdownMenuItem className="cursor-pointer text-destructive" onClick={() => handleDelete(n.id)}>
                       <Trash2 className="w-4 h-4 mr-2" />
                       Supprimer
                     </DropdownMenuItem>
@@ -418,7 +433,7 @@ export default function AdminNotificationsPage() {
         ))}
       </div>
 
-      {notifications.length === 0 && (
+      {items.length === 0 && (
         <Card className="text-center py-12 bg-gradient-to-br from-card to-muted/30 border-0">
           <CardContent>
             <div className="animate-float mb-6">
