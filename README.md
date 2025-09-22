@@ -26,6 +26,8 @@ Application web (Next.js + Laravel) destinée à accompagner la communauté Mour
 - [Authentification (Sanctum SPA)](#authentification-sanctum-spa)
 - [Endpoints API principaux](#endpoints-api-principaux)
 - [Structure du projet](#structure-du-projet)
+- [Déploiement Frontend (prod)](#déploiement-frontend-prod)
+- [Présentation vidéo / démo](#présentation-vidéo--démo)
 - [Dépannage (FAQ)](#dépannage-faq)
 
 ---
@@ -47,7 +49,7 @@ Objectifs pédagogiques: mettre en pratique une intégration réelle React (Next
 
 - Horaires (affichage)
 - Inscription pèlerin (formulaire + validation côté client)
-- Notifications (chargées depuis l’API)
+- Notifications (chargées depuis l’API; CRUD côté admin)
 - Points d’intérêt (liste publique; CRUD côté admin)
 - Authentification simple (register/login/logout) avec cookie session
 
@@ -217,6 +219,33 @@ MekteMi/
 ├── public/                 # Assets, manifest.json, sw.js
 └── styles/                 # Tailwind v4
 ```
+
+---
+
+## Déploiement Frontend (prod)
+
+Exemple avec Vercel (recommandé pour Next.js):
+1. Importer le dépôt GitHub sur Vercel (bouton “New Project”).
+2. Build Command: `next build` – Output: `.next` (par défaut).
+3. Variables d’environnement (Project Settings → Environment Variables):
+   - `NEXT_PUBLIC_API_BASE_URL=https://api.mbektemi.sn`
+   - `NEXT_PUBLIC_API_TIMEOUT=10000`
+4. Domaines: `mbektemi.sn`, `www.mbektemi.sn` (ajouter les DNS sur Vercel).
+5. Côté backend (Render): vérifier `SESSION_DOMAIN=mbektemi.sn`, `SANCTUM_STATEFUL_DOMAINS=mbektemi.sn,www.mbektemi.sn`, `APP_URL=https://api.mbektemi.sn`, `SESSION_SECURE_COOKIE=true`.
+
+Remarque: si vous utilisez un autre hébergeur (Netlify/Render Static), adaptez la configuration, mais conservez l’URL API en HTTPS et les domaines cohérents avec Sanctum.
+
+---
+
+## Présentation vidéo / démo
+
+- Lien vidéo (YouTube/Drive): à compléter par l’étudiant(e)
+- Scénario de démo suggéré (3–5 minutes):
+  1) Inscription publique d’un pèlerin (validation front + retour serveur)
+  2) Connexion admin → gestion des pèlerins (changement de statut)
+  3) CRUD Notifications et Points d’intérêt dans l’admin
+  4) Pages publiques: notifications, points d’intérêt, horaires
+  5) Rappels sur l’architecture et l’authentification Sanctum
 
 ---
 
