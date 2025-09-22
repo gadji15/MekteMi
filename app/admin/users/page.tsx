@@ -48,11 +48,16 @@ export default function AdminUsersPage() {
       setLoading(true)
       const res = await apiService.getUsers()
       setUsers(res.data || [])
-    } catch (e) {
+    } catch (e: any) {
+      if (e?.status === 401) {
+        router.push("/auth/login")
+        return
+      }
       toast.error(e instanceof Error ? e.message : "Impossible de charger les utilisateurs")
     } finally {
       setLoading(false)
     }
+  }
   }
 
   useEffect(() => {
