@@ -1,7 +1,7 @@
 // API utilities for Laravel backend integration
 
 import { httpDelete, httpGet, httpPatch, httpPost, httpPut } from "@/lib/http"
-import type { Notification, Schedule, PointOfInterest } from "@/lib/types"
+import type { Notification, Schedule, PointOfInterest, User } from "@/lib/types"
 
 export interface PilgrimRegistration {
   id?: string
@@ -62,6 +62,20 @@ export const apiService = {
     return { data: null, success: true, message: "Pèlerin supprimé" }
   },
 
+  // Users (admin)
+  async getUsers(): Promise<ApiResponse<User[]>> {
+    const items = await httpGet<User[]>("/api/users", { withCredentials: true })
+    return { data: items, success: true, message: "Utilisateurs récupérés" }
+  },
+  async updateUser(id: string, data: Partial<Pick<User, "role">> & { status?: "active" | "inactive" | "suspended"; name?: string }) {
+    const updated = await httpPatch<User>(`/api/users/${id}`, data, { withCredentials: true })
+    return { data: updated, success: true, message: "Utilisateur mis à jour" }
+  },
+  async deleteUser(id: string) {
+    await httpDelete(`/api/users/${id}`, { withCredentials: true })
+    return { data: null, success: true, message: "Utilisateur supprimé" }
+  },
+
   // Schedules
   async getSchedules(): Promise<ApiResponse<Schedule[]>> {
     const schedules = await httpGet<Schedule[]>("/api/schedules")
@@ -104,6 +118,9 @@ export const apiService = {
   },
   async deletePointOfInterest(id: string) {
     await httpDelete(`/api/points-of-interest/${id}`, { withCredentials: true })
+    return { data: null, success: true, message: "Point d'intérêt supprimé" }
+  },
+}`, { withCredentials: true })
     return { data: null, success: true, message: "Point d'intérêt supprimé" }
   },
 }

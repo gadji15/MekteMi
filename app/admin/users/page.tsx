@@ -15,47 +15,19 @@ import {
   MapPin,
   Calendar,
   MoreHorizontal,
-  Edit,
   Trash2,
   Shield,
   UserCheck,
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { apiService } from "@/lib/api"
-import type { PilgrimRegistration } from "@/lib/api"
+import type { User as ApiUser } from "@/lib/types"
 import { toast } from "sonner"
 
-type Role = "pilgrim"
 type UserStatus = "active" | "inactive" | "suspended"
 
-interface User {
-  id: string
-  firstName: string
-  lastName: string
-  email: string
-  phone?: string
-  role: Role
-  status: UserStatus
-  createdAt: string
-  city?: string
-  country?: string
-}
-
-const mapPilgrimStatusToUser = (s: PilgrimRegistration["status"]): UserStatus => {
-  switch (s) {
-    case "confirmed":
-      return "active"
-    case "pending":
-      return "inactive"
-    case "cancelled":
-      return "suspended"
-    default:
-      return "inactive"
-  }
-}
-
 export default function AdminUsersPage() {
-  const [users, setUsers] = useState<User[]>([])
+  const [users, setUsers] = useState<ApiUser[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<UserStatus | "all">("all")
@@ -63,21 +35,8 @@ export default function AdminUsersPage() {
   const fetchUsers = async () => {
     try {
       setLoading(true)
-      const res = await apiService.getPilgrimRegistrations()
-      const mapped =
-        (res.data || []).map((p) => ({
-          id: String(p.id),
-          firstName: p.firstName,
-          lastName: p.lastName,
-          email: p.email,
-          phone: p.phone,
-          city: p.city,
-          country: p.country,
-          createdAt: p.registrationDate,
-          role: "pilgrim" as const,
-          status: mapPilgrimStatusToUser(p.status),
-        })) ?? []
-      setUsers(mapped)
+      const res = await apiService.getUsers()
+      setUsers(res.data || [])
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Impossible de charger les utilisateurs")
     } finally {
@@ -101,7 +60,7 @@ export default function AdminUsersPage() {
       )
     }
     if (statusFilter !== "all") {
-      list = list.filter((u) => u.status === statusFilter)
+      list = list.filter((u) => (u as any).status === statusFilter)
     }
     return list
   }, [users, searchTerm, statusFilter])
@@ -109,10 +68,10 @@ export default function AdminUsersPage() {
   const stats = useMemo(
     () => ({
       total: users.length,
+      active: users.filter((u) => (u as any).status === "active").length,
+      inactive: users.filter((u) => (u as any).status === "inactive").length,
+      suspended: users.filter((u) => (u as any).status === "suspended").length,
       pilgrims: users.length,
-      active: users.filter((u) => u.status === "active").length,
-      inactive: users.filter((u) => u.status === "inactive").length,
-      suspended: users.filter((u) => u.status === "suspended").length,
     }),
     [users],
   )
@@ -139,12 +98,9 @@ export default function AdminUsersPage() {
     }
   }
 
-  const updateStatus = async (u: User, next: UserStatus) => {
+  const updateStatus = async (u: ApiUser, next: UserStatus) => {
     try {
-      // Map back to pilgrim status
-      const pilgrimStatus: PilgrimRegistration["status"] =
-        next === "active" ? "confirmed" : next === "inactive" ? "pending" : "cancelled"
-      await apiService.updatePilgrimStatus(u.id, pilgrimStatus)
+      await apiService.updateUser(u.id, { status: next })
       toast.success("Statut mis à jour")
       await fetchUsers()
     } catch (e) {
@@ -152,10 +108,10 @@ export default function AdminUsersPage() {
     }
   }
 
-  const handleDelete = async (u: User) => {
+  const handleDelete = async (u: ApiUser) => {
     if (!confirm(`Supprimer ${u.firstName} ${u.lastName} ?`)) return
     try {
-      await apiService.deletePilgrim(u.id)
+      await apiService.deleteUser(u.id)
       toast.success("Utilisateur supprimé")
       await fetchUsers()
     } catch (e) {
@@ -184,11 +140,11 @@ export default function AdminUsersPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-balance">Gestion des utilisateurs</h1>
-          <p className="text-muted-foreground text-lg">Liste des comptes (pèlerins)</p>
+          <p className="text-muted-foreground text-lg">Liste des comptes</p>
         </div>
         <Button className="cursor-pointer" disabled title="Création d'utilisateur non disponible pour l'instant">
           <UserCheck className="w-4 h-4 mr-2" />
-          Gérer via inscriptions
+          Bientôt: création
         </Button>
       </div>
 
@@ -305,28 +261,18 @@ export default function AdminUsersPage() {
                     <h3 className="text-lg font-semibold">
                       {user.firstName} {user.lastName}
                     </h3>
-                    <Badge className="bg-green-50 text-green-700">Pèlerin</Badge>
-                    <Badge className={getStatusColor(user.status)}>{getStatusLabel(user.status)}</Badge>
+                    <Badge className="bg-green-50 text-green-700">{(user as any).role ?? "Pèlerin"}</Badge>
+                    {((user as any).status as UserStatus) && (
+                      <Badge className={getStatusColor((user as any).status)}>
+                        {getStatusLabel((user as any).status)}
+                      </Badge>
+                    )}
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
                       <Mail className="w-4 h-4" />
                       <span>{user.email}</span>
                     </div>
-                    {user.phone && (
-                      <div className="flex items-center gap-2">
-                        <Phone className="w-4 h-4" />
-                        <span>{user.phone}</span>
-                      </div>
-                    )}
-                    {user.city && (
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4" />
-                        <span>
-                          {user.city}, {user.country}
-                        </span>
-                      </div>
-                    )}
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4" />
                       <span>Inscrit le {new Date(user.createdAt).toLocaleDateString("fr-FR")}</span>
