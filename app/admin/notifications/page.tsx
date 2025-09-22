@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -12,8 +13,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Bell, Send, Plus, Clock, Edit, Trash2, MoreHorizontal, X, AlertCircle } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { apiService } from "@/lib/api"
-import type { Notification as ApiNotification } from "@/lib/types"
 import { toast } from "sonner"
+import { useAuth } from "@/contexts/auth-context"
 
 type NotifType = "info" | "warning" | "urgent"
 
@@ -26,6 +27,9 @@ interface UiNotification {
 }
 
 export default function AdminNotificationsPage() {
+  const { user, isLoading: authLoading } = useAuth()
+  const router = useRouter()
+
   const [items, setItems] = useState<UiNotification[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
@@ -37,6 +41,12 @@ export default function AdminNotificationsPage() {
     message: "",
     type: "info",
   })
+
+  useEffect(() => {
+    if (!authLoading && (!user || user.role !== "admin")) {
+      router.push("/auth/login")
+    }
+  }, [user, authLoading, router])
 
   const fetchAll = async () => {
     try {
@@ -51,7 +61,11 @@ export default function AdminNotificationsPage() {
           createdAt: new Date(n.createdAt ?? n.created_at ?? Date.now()).toISOString(),
         })) ?? []
       setItems(normalized)
-    } catch (e) {
+    } catch (e: any) {
+      if (e?.status === 401) {
+        router.push("/auth/login")
+        return
+      }
       setError(e instanceof Error ? e.message : "Erreur de chargement")
     } finally {
       setLoading(false)
@@ -59,8 +73,10 @@ export default function AdminNotificationsPage() {
   }
 
   useEffect(() => {
-    fetchAll()
-  }, [])
+    if (user && user.role === "admin") {
+      fetchAll()
+    }
+  }, [user])
 
   const stats = useMemo(
     () => ({
@@ -110,7 +126,11 @@ export default function AdminNotificationsPage() {
       setShowForm(false)
       setEditing(null)
       await fetchAll()
-    } catch (e) {
+    } catch (e: any) {
+      if (e?.status === 401) {
+        router.push("/auth/login")
+        return
+      }
       setError(e instanceof Error ? e.message : "Enregistrement impossible")
     } finally {
       setSubmitting(false)
@@ -123,12 +143,16 @@ export default function AdminNotificationsPage() {
       await apiService.deleteNotification(id)
       toast.success("Notification supprimée")
       await fetchAll()
-    } catch (e) {
+    } catch (e: any) {
+      if (e?.status === 401) {
+        router.push("/auth/login")
+        return
+      }
       toast.error(e instanceof Error ? e.message : "Suppression impossible")
     }
   }
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="p-6">
         <div className="animate-pulse space-y-6">
@@ -141,6 +165,10 @@ export default function AdminNotificationsPage() {
         </div>
       </div>
     )
+  }
+
+  if (!user || user.role !== "admin") {
+    return null
   }
 
   return (
@@ -418,37 +446,7 @@ export default function AdminNotificationsPage() {
       )}
     </div>
   )
-} destinataires</span>
-                    </div>
-                  </div>
-                </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="cursor-pointer hover:bg-muted transition-colors">
-                      <MoreHorizontal className="w-4 h-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    {notification.status === "draft" && (
-                      <DropdownMenuItem className="cursor-pointer">
-                        <Send className="w-4 h-4 mr-2" />
-                        Envoyer
-                      </DropdownMenuItem>
-                    )}
-                    <DropdownMenuItem className="cursor-pointer">
-                      <Edit className="w-4 h-4 mr-2" />
-                      Modifier
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="cursor-pointer text-destructive">
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Supprimer
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+}
       </div>
 
       {notifications.length === 0 && (
