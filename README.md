@@ -4,206 +4,182 @@
 
 ![MbekteMi Logo](public/icon.jpg)
 
-**Application web progressive pour la communauté Mouride lors du Magal de Touba**
+Application web (Next.js + Laravel) destinée à accompagner la communauté Mouride lors du Magal de Touba.
 
 [![Next.js](https://img.shields.io/badge/Next.js-14.2.16-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
-[![PWA](https://img.shields.io/badge/PWA-Ready-green?style=for-the-badge)](https://web.dev/progressive-web-apps/)
-
-[🌐 Demo Live](https://mbektemi.vercel.app) • [📱 Télécharger PWA](#installation) • [📖 Documentation](#documentation)
+[![Laravel](https://img.shields.io/badge/Laravel-12-red?style=for-the-badge&logo=laravel)](https://laravel.com/)
 
 </div>
 
 ---
 
-## 📋 Table des Matières
+## 📋 Sommaire
 
-- [🎯 À Propos](#-à-propos)
-- [✨ Fonctionnalités](#-fonctionnalités)
-- [🚀 Technologies](#-technologies)
-- [📱 Installation](#-installation)
-- [🛠️ Développement](#️-développement)
-- [🎨 Design System](#-design-system)
-- [📊 Architecture](#-architecture)
-- [🔐 Authentification](#-authentification)
-- [🌐 API](#-api)
-- [📱 PWA Features](#-pwa-features)
-- [🎯 SEO & Performance](#-seo--performance)
-- [🤝 Contribution](#-contribution)
-- [📞 Contact](#-contact)
-- [📄 Licence](#-licence)
+- [Présentation rapide](#présentation-rapide)
+- [Fonctionnalités](#fonctionnalités)
+- [Stack technique](#stack-technique)
+- [Démarrage rapide (local)](#démarrage-rapide-local)
+- [Procédure détaillée (local, avec Sail)](#procédure-détaillée-local-avec-sail)
+- [Variables d’environnement](#variables-denvironnement)
+- [Authentification (Sanctum SPA)](#authentification-sanctum-spa)
+- [Endpoints API principaux](#endpoints-api-principaux)
+- [Structure du projet](#structure-du-projet)
+- [Dépannage (FAQ)](#dépannage-faq)
 
 ---
 
-## 🎯 À Propos
+## Présentation rapide
 
-**MbekteMi** est une application web progressive moderne conçue spécialement pour accompagner la communauté Mouride lors du Magal de Touba. Cette application offre une expérience utilisateur exceptionnelle avec des fonctionnalités essentielles pour les pèlerins.
+MbekteMi centralise des informations utiles pour le Magal de Touba:
+- Consultation des horaires (prières / programme)
+- Formulaire d’inscription des pèlerins
+- Notifications officielles
+- Points d’intérêt (hébergement, santé, restauration, transport, mosquées)
+- Espace admin (gestion basique)
 
-### 🌟 Mission
-
-Faciliter l'expérience spirituelle des pèlerins en fournissant un accès rapide et intuitif aux informations essentielles du Magal de Touba, tout en créant un lien numérique fort au sein de la communauté Mouride.
-
-### 🎯 Objectifs
-
-- **Accessibilité** : Interface multilingue (Français/Wolof) et responsive
-- **Performance** : Application PWA ultra-rapide, fonctionnant hors ligne
-- **Communauté** : Rassembler les pèlerins dans un espace numérique unifié
-- **Spiritualité** : Respecter et valoriser les traditions religieuses
+Objectifs pédagogiques: mettre en pratique une intégration réelle React (Next.js) ↔ Laravel via Axios, avec une authentification simple (Sanctum SPA) et une UX responsive.
 
 ---
 
-## ✨ Fonctionnalités
+## Fonctionnalités
 
-### 🕐 **Horaires des Prières**
-- Horaires précis des 5 prières quotidiennes
-- Calendrier des événements spirituels
-- Notifications personnalisables
-- Synchronisation automatique avec l'heure locale
-
-### 👥 **Inscription Pèlerin**
-- Formulaire d'inscription sécurisé et intuitif
-- Validation en temps réel des données
-- Suivi du statut d'inscription
-
-### 🔔 **Système de Notifications**
-- Annonces officielles du Magal
-- Alertes et informations importantes
-- Affichage responsive
-
-### 🗺️ **Points d'Intérêt**
-- Liste des lieux clés (mosquées, santé, transport, restauration, hébergement)
-- Informations pratiques (horaires d'ouverture, adresse, téléphone)
-
-### 👨‍💼 **Interface Administrateur**
-- Accès protégé (auth Sanctum)
-- Gestion des inscriptions, notifications, points d'intérêt (via API)
+- Horaires (affichage)
+- Inscription pèlerin (formulaire + validation côté client)
+- Notifications (chargées depuis l’API)
+- Points d’intérêt (liste publique; CRUD côté admin)
+- Authentification simple (register/login/logout) avec cookie session
 
 ---
 
-## 🚀 Technologies
+## Stack technique
 
-### **Frontend**
-- **Next.js 14.2.16** - App Router (React 18)
-- **TypeScript** - Typage strict
-- **Tailwind CSS v4** + **shadcn/ui**
-- **Axios** - Communication HTTP (exigence académique)
-
-### **Backend**
-- **Laravel** (API REST)
-- **Sanctum** - Authentification cookie (SPA)
-- **Eloquent** - ORM, migrations & seeders
-
-### **PWA & Performance**
-- **Service Worker** custom
-- **Web App Manifest**
-- **Vercel Analytics**
+- Frontend: Next.js 14 (App Router), React 18, TypeScript, Tailwind v4, shadcn/ui, Axios
+- Backend: Laravel 12 (API REST), Sanctum (SPA), Eloquent (migrations/seeders)
+- PWA: manifest + service worker (mode dev/local pris en charge, hors scope pour la note)
 
 ---
 
-## 📱 Installation
+## Démarrage rapide (local)
 
-### **Installation PWA (Recommandée)**
+Pré-requis:
+- WSL (Ubuntu) recommandé sous Windows
+- Docker Desktop + intégration WSL
+- Node LTS + pnpm (ou npm)
+- Git
 
-1. **Sur Mobile (iOS/Android)**
-   - Ouvrez [mbektemi.vercel.app](https://mbektemi.vercel.app) dans Safari/Chrome
-   - Appuyez sur "Partager" → "Ajouter à l'écran d'accueil"
-   - L'application s'installe comme une app native
+Commandes (dans WSL):
 
-2. **Sur Desktop (Chrome/Edge)**
-   - Visitez [mbektemi.vercel.app](https://mbektemi.vercel.app)
-   - Cliquez sur l'icône d'installation dans la barre d'adresse
-   - Suivez les instructions d'installation
+```bash
+# 1) Cloner le projet
+git clone https://github.com/gadji15/MekteMi.git
+cd MekteMi
 
-### **Installation pour Développement**
+# 2) Backend (Laravel + Sail)
+cd mbektemi-api
+./vendor/bin/sail up -d
+./vendor/bin/sail artisan migrate --force
+./vendor/bin/sail artisan db:seed
+# Le backend sert sur http://localhost
 
-\`\`\`bash
-# Cloner le repository
-git clone https://github.com/quantiksense/mbektemi.git
-cd mbektemi
+# 3) Frontend (Next.js)
+cd ..
+pnpm install   # ou: npm install
+pnpm dev       # ou: npm run dev
 
-# Installer les dépendances
-pnpm install # ou npm install / yarn install
+# 4) Ouvrir le front
+# http://localhost:3000
+```
 
-# Lancer le serveur de développement
-pnpm dev     # ou npm run dev / yarn dev
-\`\`\`
-
-Ouvrez [http://localhost:3000](http://localhost:3000).
-
----
-
-## 🛠️ Développement
-
-### **Scripts Disponibles**
-
-\`\`\`bash
-npm run dev          # Serveur de développement
-npm run build        # Build de production
-npm run start        # Serveur de production
-npm run lint         # ESLint
-\`\`\`
-
-### **Structure du Projet**
-
-\`\`\`
-mbektemi/
-├── app/                    # App Router (Next.js)
-├── components/             # Composants réutilisables (shadcn/ui)
-├── contexts/               # Contextes React (auth)
-├── lib/                    # Axios HTTP client, config, services
-├── mbektemi-api/           # Backend Laravel (API REST)
-├── public/                 # Assets statiques, manifest, sw.js
-└── styles/                 # Tailwind v4 & thèmes
-\`\`\`
-
-### **Variables d'Environnement**
-
-Frontend `.env.local` :
-\`\`\`env
-NEXT_PUBLIC_API_BASE_URL="http://localhost:8000"
-NEXT_PUBLIC_API_TIMEOUT="10000"
-\`\`\`
-
-Backend Laravel `.env` :
-\`\`\`env
-APP_URL="http://localhost:8000"
-SESSION_DOMAIN="localhost"
-SANCTUM_STATEFUL_DOMAINS="localhost:3000,localhost"
-\`\`\`
+Checklist Sanctum locale (après avoir ouvert http://localhost:3000):
+- GET http://localhost/sanctum/csrf-cookie → pose les cookies
+- POST http://localhost/api/auth/register → 201
+- GET http://localhost/api/auth/me → 200 (session active)
 
 ---
 
-## 📊 Architecture
+## Procédure détaillée (local, avec Sail)
 
-- Frontend React (Next.js) <—Axios—> API Laravel (Sanctum)
-- Rendu côté client pour les pages data-driven (horaires, notifications, points d’intérêt)
-- Protection /admin côté client et côté API via Sanctum
+1) Docker/Sail
+- Démarrer les containers:
+  ```bash
+  cd mbektemi-api
+  ./vendor/bin/sail up -d
+  ```
+- Migrations et seeders:
+  ```bash
+  ./vendor/bin/sail artisan migrate --force
+  ./vendor/bin/sail artisan db:seed
+  ```
+
+2) Variables backend (déjà prêtes pour local)
+- Fichier `mbektemi-api/.env` (fourni): 
+  - APP_URL=http://localhost
+  - SESSION_DOMAIN=localhost
+  - SANCTUM_STATEFUL_DOMAINS=localhost,localhost:3000,127.0.0.1,127.0.0.1:3000
+
+3) Frontend
+- Installer et lancer:
+  ```bash
+  cd ..
+  pnpm install   # ou npm install
+  pnpm dev
+  ```
+- Fichier `.env.local` (fourni):
+  ```env
+  NEXT_PUBLIC_API_BASE_URL=http://localhost
+  NEXT_PUBLIC_API_TIMEOUT=10000
+  ```
+  Si vous lancez Laravel avec `php artisan serve --port=8000`, utilisez à la place:
+  `NEXT_PUBLIC_API_BASE_URL=http://localhost:8000`
 
 ---
 
-## 🔐 Authentification
+## Variables d’environnement
 
-- Sanctum SPA cookie (CSRF + credentials)
-- Endpoints: POST /api/auth/login, POST /api/auth/register, POST /api/auth/logout, GET /api/auth/me
-- Rôle démo: admin si email == admin@mbektemi.sn (sinon pilgrim)
+Frontend `.env.local` (local):
+```env
+NEXT_PUBLIC_API_BASE_URL=http://localhost
+NEXT_PUBLIC_API_TIMEOUT=10000
+# Si artisan serve:
+# NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+```
+
+Backend `mbektemi-api/.env` (local avec Sail):
+```env
+APP_URL=http://localhost
+SESSION_DOMAIN=localhost
+SESSION_SECURE_COOKIE=false
+SANCTUM_STATEFUL_DOMAINS=localhost,localhost:3000,127.0.0.1,127.0.0.1:3000
+```
 
 ---
 
-## 🌐 API
+## Authentification (Sanctum SPA)
 
-### **Endpoints Disponibles**
+Flux:
+1) Le front demande le cookie CSRF: `GET /sanctum/csrf-cookie` (avec credentials)
+2) Le front envoie le formulaire: `POST /api/auth/register` ou `POST /api/auth/login`
+3) La session est stockée côté Laravel; `GET /api/auth/me` renvoie l’utilisateur
+4) `POST /api/auth/logout` ferme la session
 
-\`\`\`text
-# Auth (SPA)
+Rôle admin: par défaut, un email présent dans `ADMIN_EMAILS` (dans `.env` backend) est considéré admin (ex: `admin@mbektemi.sn`, `gadjicheikh15@gmail.com`).
+
+---
+
+## Endpoints API principaux
+
+```text
+# Auth
 POST /api/auth/register
 POST /api/auth/login
 POST /api/auth/logout
 GET  /api/auth/me
 
 # Pèlerins
-GET    /api/pilgrims           (protégé)
 POST   /api/pilgrims           (public)
+GET    /api/pilgrims           (protégé)
 PATCH  /api/pilgrims/{id}      (protégé)
 DELETE /api/pilgrims/{id}      (protégé)
 
@@ -216,58 +192,52 @@ DELETE /api/notifications/{id} (protégé)
 # Horaires
 GET /api/schedules             (public)
 
-# Points d'intérêt
-GET    /api/points-of-interest                 (public)
+# Points d'intérêt (POI)
+GET    /api/points-of-interest
 POST   /api/points-of-interest                 (protégé)
 PUT    /api/points-of-interest/{id}            (protégé)
 DELETE /api/points-of-interest/{id}            (protégé)
-\`\`\`
+```
 
 ---
 
-## 📱 PWA Features
+## Structure du projet
 
-- **Installation** (mobile/desktop)
-- **Offline** (assets statiques)
-- **Responsive** (mobile-first)
-
----
-
-## 🎯 SEO & Performance
-
-- Métadonnées, Open Graph, manifest
-- Tailwind + shadcn/ui
-- Optimisations visuelles (animations, gradients)
-
----
-
-## 🤝 Contribution
-
-- GitHub flow (branche, PR)
-- Respect des conventions de code
-- Documentation à jour
+```
+MekteMi/
+├── app/                    # App Router (Next.js)
+├── components/             # UI (shadcn/ui), navigation, layout
+├── contexts/               # Auth context (React)
+├── lib/                    # Axios, api service, types, utils
+├── mbektemi-api/           # Backend Laravel (API)
+│   ├── app/Http/Controllers
+│   ├── app/Models
+│   ├── database/migrations
+│   └── routes/{api.php,web.php}
+├── public/                 # Assets, manifest.json, sw.js
+└── styles/                 # Tailwind v4
+```
 
 ---
 
-## 📞 Contact
+## Dépannage (FAQ)
 
-**QuantikSense** - Développement et Maintenance
-- 📧 [quantiksense@gmail.com](mailto:quantiksense@gmail.com)
-- 📱 +221 78 478 28 50
-- 🌐 https://quantiksense.com
+- Le front affiche `ERR_CONNECTION_REFUSED`:
+  - Vérifiez que Sail est démarré (`./vendor/bin/sail up -d`)
+  - Vérifiez que `NEXT_PUBLIC_API_BASE_URL` pointe bien sur http://localhost (ou :8000 si artisan)
+  - Redémarrez `pnpm dev`
+
+- `CSRF token mismatch (419)`:
+  - Vérifiez dans `mbektemi-api/.env`: `SESSION_DOMAIN=localhost`, `SANCTUM_STATEFUL_DOMAINS` inclut `localhost:3000`
+  - Lancez `./vendor/bin/sail artisan config:clear`
+  - Rechargez la page et réessayez
+
+- `GET /api/auth/me` renvoie 401 au premier chargement:
+  - Normal si non connecté. Après `register` ou `login`, l’appel renverra 200.
+
+- Favicon 404 en dev:
+  - Non bloquant. Ajoutez un favicon dans `public/favicon.ico` si besoin.
 
 ---
 
-## 📄 Licence
-
-Sous licence **MIT**.
-
-<div align="center">
-
-**Fait avec ❤️ pour la communauté Mouride**
-
-[⬆️ Retour en haut](#-mbektemi---application-communautaire)
-
-*MbekteMi - Connecter la spiritualité à la technologie moderne*
-
-</div>
+Ce document explique comment cloner, configurer et démarrer le projet en local, ainsi que l’architecture, les variables d’environnement et le flux d’authentification. Il est rédigé pour qu’un autre développeur puisse lancer l’application rapidement dans les mêmes conditions locales.
