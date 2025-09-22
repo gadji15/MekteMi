@@ -121,5 +121,3 @@ export const apiService = {
     return { data: null, success: true, message: "Point d'intérêt supprimé" }
   },
 }
-  },
-}

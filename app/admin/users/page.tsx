@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -23,14 +24,24 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { apiService } from "@/lib/api"
 import type { User as ApiUser } from "@/lib/types"
 import { toast } from "sonner"
+import { useAuth } from "@/contexts/auth-context"
 
 type UserStatus = "active" | "inactive" | "suspended"
 
 export default function AdminUsersPage() {
+  const { user: currentUser, isLoading: authLoading } = useAuth()
+  const router = useRouter()
+
   const [users, setUsers] = useState<ApiUser[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<UserStatus | "all">("all")
+
+  useEffect(() => {
+    if (!authLoading && (!currentUser || currentUser.role !== "admin")) {
+      router.push("/auth/login")
+    }
+  }, [currentUser, authLoading, router])
 
   const fetchUsers = async () => {
     try {
@@ -45,8 +56,10 @@ export default function AdminUsersPage() {
   }
 
   useEffect(() => {
-    fetchUsers()
-  }, [])
+    if (currentUser && currentUser.role === "admin") {
+      fetchUsers()
+    }
+  }, [currentUser])
 
   const filteredUsers = useMemo(() => {
     let list = users
@@ -119,7 +132,7 @@ export default function AdminUsersPage() {
     }
   }
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="p-6">
         <div className="animate-pulse space-y-6">
@@ -132,6 +145,10 @@ export default function AdminUsersPage() {
         </div>
       </div>
     )
+  }
+
+  if (!currentUser || currentUser.role !== "admin") {
+    return null
   }
 
   return (
