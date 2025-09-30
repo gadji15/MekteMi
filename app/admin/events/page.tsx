@@ -1,105 +1,134 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Calendar, Search, Filter, Plus, Clock, MapPin, Users, Edit, Trash2, MoreHorizontal } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Calendar, Search, Filter, Plus, Clock, MapPin, Edit, Trash2, MoreHorizontal, AlertCircle } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { apiService } from "@/lib/api"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/contexts/auth-context"
+
+type EventType = "prayer" | "ceremony" | "event"
 
 interface Event {
   id: string
   title: string
   description: string
+  date?: string
   startTime: string
   endTime: string
   location: string
-  type: "prayer" | "ceremony" | "event"
-  status: "active" | "cancelled" | "completed"
-  attendees: number
-  maxCapacity?: number
+  type: EventType
 }
 
 export default function AdminEventsPage() {
+  const router = useRouter()
+  const { user, isLoading: authLoading } = useAuth()
+
   const [events, setEvents] = useState<Event[]>([])
   const [filteredEvents, setFilteredEvents] = useState<Event[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState("")
   const [searchTerm, setSearchTerm] = useState("")
   const [typeFilter, setTypeFilter] = useState<string>("all")
-  const [statusFilter, setStatusFilter] = useState<string>("all")
 
-  // Mock data
+  const [showForm, setShowForm] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [editing, setEditing] = useState<Event | null>(null)
+  const [form, setForm] = useState<{
+    title: string
+    description: string
+    date?: string
+    startTime: string
+    endTime: string
+    location: string
+    type: EventType
+  }>({
+    title: "",
+    description: "",
+    date: "",
+    startTime: "",
+    endTime: "",
+    location: "",
+    type: "event",
+  })
+
   useEffect(() => {
-    const mockEvents: Event[] = [
-      {
-        id: "1",
-        title: "Fajr (Prière de l'aube)",
-        description: "Première prière de la journée",
-        startTime: "05:30",
-        endTime: "06:00",
-        location: "Grande Mosquée de Touba",
-        type: "prayer",
-        status: "active",
-        attendees: 2500,
-        maxCapacity: 3000,
-      },
-      {
-        id: "2",
-        title: "Cérémonie d'ouverture du Magal",
-        description: "Cérémonie officielle d'ouverture",
-        startTime: "09:00",
-        endTime: "11:00",
-        location: "Mausolée de Cheikh Ahmadou Bamba",
-        type: "ceremony",
-        status: "active",
-        attendees: 5000,
-        maxCapacity: 8000,
-      },
-      {
-        id: "3",
-        title: "Conférence religieuse",
-        description: "Enseignements sur la vie de Cheikh Ahmadou Bamba",
-        startTime: "15:00",
-        endTime: "17:00",
-        location: "Centre de conférences",
-        type: "event",
-        status: "active",
-        attendees: 800,
-        maxCapacity: 1000,
-      },
-    ]
+    if (!authLoading && (!user || user.role !== "admin")) {
+      router.push("/auth/login")
+    }
+  }, [user, authLoading, router])
 
-    setTimeout(() => {
-      setEvents(mockEvents)
-      setFilteredEvents(mockEvents)
+  const normalize = (s: any): Event => ({
+    id: String(s.id),
+    title: s.title,
+    description: s.description ?? "",
+    date: s.date ?? "",
+    startTime: s.start_time ?? s.startTime ?? "",
+    endTime: s.end_time ?? s.endTime ?? "",
+    location: s.location ?? "",
+    type: (s.type as EventType) ?? "event",
+  })
+
+  const fetchAll = async () => {
+    try {
+      setIsLoading(true)
+      setError("")
+      const res = await apiService.getSchedules()
+      const items = (res.data || []).map(normalize)
+      setEvents(items)
+      setFilteredEvents(items)
+    } catch (e: any) {
+      if (e?.status === 401) {
+        router.push("/auth/login")
+        return
+      }
+      setError(e instanceof Error ? e.message : "Erreur de chargement")
+    } finally {
       setIsLoading(false)
-    }, 1000)
-  }, [])
+    }
+  }
 
   useEffect(() => {
-    let filtered = events
+    if (user && user.role === "admin") {
+      fetchAll()
+    }
+  }, [user])
 
+  // Filtering
+  useEffect(() => {
+    let f = events
     if (searchTerm) {
-      filtered = filtered.filter(
-        (event) =>
-          event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          event.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          event.description.toLowerCase().includes(searchTerm.toLowerCase()),
+      const term = searchTerm.toLowerCase()
+      f = f.filter(
+        (ev) =>
+          ev.title.toLowerCase().includes(term) ||
+          ev.location.toLowerCase().includes(term) ||
+          ev.description.toLowerCase().includes(term),
       )
     }
-
     if (typeFilter !== "all") {
-      filtered = filtered.filter((event) => event.type === typeFilter)
+      f = f.filter((ev) => ev.type === typeFilter)
     }
+    setFilteredEvents(f)
+  }, [events, searchTerm, typeFilter])
 
-    if (statusFilter !== "all") {
-      filtered = filtered.filter((event) => event.status === statusFilter)
-    }
-
-    setFilteredEvents(filtered)
-  }, [events, searchTerm, typeFilter, statusFilter])
+  const stats = useMemo(
+    () => ({
+      total: events.length,
+      prayers: events.filter((e) => e.type === "prayer").length,
+      ceremonies: events.filter((e) => e.type === "ceremony").length,
+      others: events.filter((e) => e.type === "event").length,
+    }),
+    [events],
+  )
 
   const getTypeColor = (type: string) => {
     switch (type) {
@@ -109,19 +138,6 @@ export default function AdminEventsPage() {
         return "bg-red-50 text-red-700"
       case "event":
         return "bg-blue-50 text-blue-700"
-      default:
-        return "bg-gray-50 text-gray-700"
-    }
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "active":
-        return "bg-green-50 text-green-700"
-      case "cancelled":
-        return "bg-red-50 text-red-700"
-      case "completed":
-        return "bg-gray-50 text-gray-700"
       default:
         return "bg-gray-50 text-gray-700"
     }
@@ -140,28 +156,94 @@ export default function AdminEventsPage() {
     }
   }
 
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case "active":
-        return "Actif"
-      case "cancelled":
-        return "Annulé"
-      case "completed":
-        return "Terminé"
-      default:
-        return status
+  const startCreate = () => {
+    setEditing(null)
+    setForm({
+      title: "",
+      description: "",
+      date: "",
+      startTime: "",
+      endTime: "",
+      location: "",
+      type: "event",
+    })
+    setShowForm(true)
+    setError("")
+  }
+
+  const startEdit = (ev: Event) => {
+    setEditing(ev)
+    setForm({
+      title: ev.title,
+      description: ev.description,
+      date: ev.date || "",
+      startTime: ev.startTime,
+      endTime: ev.endTime,
+      location: ev.location,
+      type: ev.type,
+    })
+    setShowForm(true)
+    setError("")
+  }
+
+  const handleSubmit = async () => {
+    if (!form.title.trim()) {
+      setError("Le titre est requis")
+      return
+    }
+    try {
+      setSubmitting(true)
+      setError("")
+      if (editing) {
+        await apiService.updateSchedule(editing.id, {
+          title: form.title.trim(),
+          description: form.description.trim(),
+          date: form.date || undefined,
+          startTime: form.startTime || undefined,
+          endTime: form.endTime || undefined,
+          location: form.location || undefined,
+          type: form.type,
+        })
+      } else {
+        await apiService.createSchedule({
+          title: form.title.trim(),
+          description: form.description.trim(),
+          date: form.date || undefined,
+          startTime: form.startTime || undefined,
+          endTime: form.endTime || undefined,
+          location: form.location || undefined,
+          type: form.type,
+        })
+      }
+      setShowForm(false)
+      setEditing(null)
+      await fetchAll()
+    } catch (e: any) {
+      if (e?.status === 401) {
+        router.push("/auth/login")
+        return
+      }
+      setError(e instanceof Error ? e.message : "Enregistrement impossible")
+    } finally {
+      setSubmitting(false)
     }
   }
 
-  const stats = {
-    total: events.length,
-    active: events.filter((e) => e.status === "active").length,
-    prayers: events.filter((e) => e.type === "prayer").length,
-    ceremonies: events.filter((e) => e.type === "ceremony").length,
-    totalAttendees: events.reduce((sum, e) => sum + e.attendees, 0),
+  const handleDelete = async (id: string) => {
+    if (!confirm("Supprimer cet horaire ?")) return
+    try {
+      await apiService.deleteSchedule(id)
+      await fetchAll()
+    } catch (e: any) {
+      if (e?.status === 401) {
+        router.push("/auth/login")
+        return
+      }
+      setError(e instanceof Error ? e.message : "Suppression impossible")
+    }
   }
 
-  if (isLoading) {
+  if (authLoading || isLoading) {
     return (
       <div className="p-6">
         <div className="animate-pulse space-y-6">
@@ -176,22 +258,26 @@ export default function AdminEventsPage() {
     )
   }
 
+  if (!user || user.role !== "admin") {
+    return null
+  }
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-balance">Gestion des événements</h1>
-          <p className="text-muted-foreground text-lg">Gérez les prières, cérémonies et événements du Magal</p>
+          <h1 className="text-3xl font-bold text-balance">Gestion des horaires</h1>
+          <p className="text-muted-foreground text-lg">Créez et gérez les prières, cérémonies et événements du Magal</p>
         </div>
-        <Button className="cursor-pointer">
+        <Button onClick={startCreate} className="cursor-pointer">
           <Plus className="w-4 h-4 mr-2" />
-          Nouvel événement
+          Nouvel horaire
         </Button>
       </div>
 
       {/* Statistics */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="bg-gradient-to-br from-card to-muted/30 border-0 shadow-lg">
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
@@ -199,17 +285,6 @@ export default function AdminEventsPage() {
               <div>
                 <p className="text-2xl font-bold">{stats.total}</p>
                 <p className="text-sm text-muted-foreground">Total</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-card to-muted/30 border-0 shadow-lg">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-green-600" />
-              <div>
-                <p className="text-2xl font-bold">{stats.active}</p>
-                <p className="text-sm text-muted-foreground">Actifs</p>
               </div>
             </div>
           </CardContent>
@@ -239,10 +314,10 @@ export default function AdminEventsPage() {
         <Card className="bg-gradient-to-br from-card to-muted/30 border-0 shadow-lg">
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-blue-600" />
+              <Calendar className="w-5 h-5 text-blue-600" />
               <div>
-                <p className="text-2xl font-bold">{stats.totalAttendees.toLocaleString()}</p>
-                <p className="text-sm text-muted-foreground">Participants</p>
+                <p className="text-2xl font-bold">{stats.others}</p>
+                <p className="text-sm text-muted-foreground">Événements</p>
               </div>
             </div>
           </CardContent>
@@ -285,64 +360,196 @@ export default function AdminEventsPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Statut</label>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tous les statuts</SelectItem>
-                  <SelectItem value="active">Actif</SelectItem>
-                  <SelectItem value="cancelled">Annulé</SelectItem>
-                  <SelectItem value="completed">Terminé</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
           </div>
         </CardContent>
       </Card>
 
+      {/* Create/Edit Form */}
+      {showForm && (
+        <Card className="bg-gradient-to-br from-card to-muted/30 border-0 shadow-lg animate-slide-up">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-2xl">{editing ? "Modifier l'horaire" : "Nouvel horaire"}</CardTitle>
+              <CardDescription>
+                {editing ? "Mettez à jour les informations de l'horaire" : "Créez un nouvel horaire pour le Magal"}
+              </CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowForm(false)
+                setEditing(null)
+              }}
+              className="cursor-pointer"
+            >
+              Annuler
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {error && (
+              <Alert className="border-destructive/50 bg-destructive/5 animate-shake">
+                <AlertCircle className="h-4 w-4 text-destructive" />
+                <AlertDescription className="text-destructive font-medium">{error}</AlertDescription>
+              </Alert>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <Label htmlFor="title" className="text-base font-medium">
+                  Titre *
+                </Label>
+                <Input
+                  id="title"
+                  placeholder="Titre de l'horaire"
+                  value={form.title}
+                  onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
+                  disabled={submitting}
+                  className="h-12"
+                />
+              </div>
+
+              <div className="space-y-3">
+                <Label htmlFor="type" className="text-base font-medium">
+                  Type *
+                </Label>
+                <Select value={form.type} onValueChange={(value: EventType) => setForm((p) => ({ ...p, type: value }))}>
+                  <SelectTrigger className="h-12">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="prayer">Prière</SelectItem>
+                    <SelectItem value="event">Événement</SelectItem>
+                    <SelectItem value="ceremony">Cérémonie</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-3">
+                <Label htmlFor="date" className="text-base font-medium">
+                  Date
+                </Label>
+                <Input
+                  id="date"
+                  type="date"
+                  value={form.date}
+                  onChange={(e) => setForm((p) => ({ ...p, date: e.target.value }))}
+                  disabled={submitting}
+                  className="h-12"
+                />
+              </div>
+
+              <div className="space-y-3">
+                <Label htmlFor="location" className="text-base font-medium">
+                  Lieu
+                </Label>
+                <Input
+                  id="location"
+                  placeholder="Lieu (optionnel)"
+                  value={form.location}
+                  onChange={(e) => setForm((p) => ({ ...p, location: e.target.value }))}
+                  disabled={submitting}
+                  className="h-12"
+                />
+              </div>
+
+              <div className="space-y-3">
+                <Label htmlFor="startTime" className="text-base font-medium">
+                  Heure de début (HH:mm)
+                </Label>
+                <Input
+                  id="startTime"
+                  placeholder="05:30"
+                  value={form.startTime}
+                  onChange={(e) => setForm((p) => ({ ...p, startTime: e.target.value }))}
+                  disabled={submitting}
+                  className="h-12"
+                />
+              </div>
+
+              <div className="space-y-3">
+                <Label htmlFor="endTime" className="text-base font-medium">
+                  Heure de fin (HH:mm)
+                </Label>
+                <Input
+                  id="endTime"
+                  placeholder="07:00"
+                  value={form.endTime}
+                  onChange={(e) => setForm((p) => ({ ...p, endTime: e.target.value }))}
+                  disabled={submitting}
+                  className="h-12"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <Label htmlFor="description" className="text-base font-medium">
+                Description
+              </Label>
+              <Textarea
+                id="description"
+                placeholder="Description (optionnel)"
+                rows={4}
+                value={form.description}
+                onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
+                disabled={submitting}
+              />
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <Button
+                onClick={handleSubmit}
+                disabled={submitting || !form.title}
+                className="flex-1 h-12 cursor-pointer bg-gradient-to-r from-primary to-secondary hover:from-secondary hover:to-primary transition-all duration-300 hover:scale-105"
+              >
+                {submitting ? "Enregistrement..." : editing ? "Mettre à jour" : "Créer l'horaire"}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowForm(false)
+                  setEditing(null)
+                }}
+                disabled={submitting}
+                className="flex-1 h-12 cursor-pointer"
+              >
+                Annuler
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Events List */}
       <div className="space-y-4">
         {filteredEvents.map((event) => (
-          <Card
-            key={event.id}
-            className="hover:shadow-lg transition-shadow bg-gradient-to-br from-card to-muted/30 border-0"
-          >
+          <Card key={event.id} className="hover:shadow-lg transition-shadow bg-gradient-to-br from-card to-muted/30 border-0">
             <CardContent className="p-6">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     <h3 className="text-lg font-semibold">{event.title}</h3>
                     <Badge className={getTypeColor(event.type)}>{getTypeLabel(event.type)}</Badge>
-                    <Badge className={getStatusColor(event.status)}>{getStatusLabel(event.status)}</Badge>
                   </div>
                   <p className="text-muted-foreground mb-4">{event.description}</p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-primary" />
-                      <span>
-                        {event.startTime} - {event.endTime}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-secondary" />
-                      <span>{event.location}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Users className="w-4 h-4 text-blue-600" />
-                      <span>{event.attendees.toLocaleString()} participants</span>
-                    </div>
-                    {event.maxCapacity && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    {(event.startTime || event.endTime) && (
                       <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 rounded bg-gray-200">
-                          <div
-                            className="h-full bg-primary rounded"
-                            style={{ width: `${(event.attendees / event.maxCapacity) * 100}%` }}
-                          />
-                        </div>
-                        <span>{Math.round((event.attendees / event.maxCapacity) * 100)}% capacité</span>
+                        <Clock className="w-4 h-4 text-primary" />
+                        <span>
+                          {event.startTime} {event.endTime ? `- ${event.endTime}` : ""}
+                        </span>
+                      </div>
+                    )}
+                    {event.location && (
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-secondary" />
+                        <span>{event.location}</span>
+                      </div>
+                    )}
+                    {event.date && (
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-blue-600" />
+                        <span>{event.date}</span>
                       </div>
                     )}
                   </div>
@@ -354,11 +561,11 @@ export default function AdminEventsPage() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem className="cursor-pointer">
+                    <DropdownMenuItem className="cursor-pointer" onClick={() => startEdit(event)}>
                       <Edit className="w-4 h-4 mr-2" />
                       Modifier
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="cursor-pointer text-destructive">
+                    <DropdownMenuItem className="cursor-pointer text-destructive" onClick={() => handleDelete(event.id)}>
                       <Trash2 className="w-4 h-4 mr-2" />
                       Supprimer
                     </DropdownMenuItem>
@@ -374,11 +581,18 @@ export default function AdminEventsPage() {
         <Card className="text-center py-12 bg-gradient-to-br from-card to-muted/30 border-0">
           <CardContent>
             <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <CardTitle className="text-xl mb-2">Aucun événement trouvé</CardTitle>
+            <CardTitle className="text-xl mb-2">Aucun horaire trouvé</CardTitle>
             <CardDescription>
-              {searchTerm || typeFilter !== "all" || statusFilter !== "all"
-                ? "Aucun événement ne correspond aux critères de recherche."
-                : "Aucun événement n'est encore programmé."}
+              {searchTerm || typeFilter !== "all"
+                ? "Aucun horaire ne correspond aux critères de recherche."
+                : "Aucun horaire n'est encore programmé."}
+            </CardDescription>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  )
+}
             </CardDescription>
           </CardContent>
         </Card>
