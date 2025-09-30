@@ -276,6 +276,23 @@ export default function AdminEventsPage() {
     return null
   }
 
+  // Pagination
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+  const totalPages = Math.max(1, Math.ceil(filteredEvents.length / pageSize))
+  const currentItems = filteredEvents.slice((page - 1) * pageSize, page * pageSize)
+
+  useEffect(() => {
+    // Reset page if filters change
+    setPage(1)
+  }, [searchTerm, typeFilter])
+
+  const changePageSize = (value: string) => {
+    const size = Number(value)
+    setPageSize(size)
+    setPage(1)
+  }
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -371,6 +388,19 @@ export default function AdminEventsPage() {
                   <SelectItem value="prayer">Prière</SelectItem>
                   <SelectItem value="ceremony">Cérémonie</SelectItem>
                   <SelectItem value="event">Événement</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Éléments par page</label>
+              <Select value={String(pageSize)} onValueChange={changePageSize}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5">5</SelectItem>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="20">20</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -535,7 +565,7 @@ export default function AdminEventsPage() {
 
       {/* Events List */}
       <div className="space-y-4">
-        {filteredEvents.map((event) => (
+        {currentItems.map((event) => (
           <Card key={event.id} className="hover:shadow-lg transition-shadow bg-gradient-to-br from-card to-muted/30 border-0">
             <CardContent className="p-6">
               <div className="flex items-start justify-between">
@@ -591,22 +621,28 @@ export default function AdminEventsPage() {
         ))}
       </div>
 
-      {filteredEvents.length === 0 && (
-        <Card className="text-center py-12 bg-gradient-to-br from-card to-muted/30 border-0">
-          <CardContent>
-            <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <CardTitle className="text-xl mb-2">Aucun horaire trouvé</CardTitle>
-            <CardDescription>
-              {searchTerm || typeFilter !== "all"
-                ? "Aucun horaire ne correspond aux critères de recherche."
-                : "Aucun horaire n'est encore programmé."}
-            </CardDescription>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  )
-}
+      {/* Pagination controls */}
+      <div className="flex items-center justify-between pt-2">
+        <div className="text-sm text-muted-foreground">
+          Page {page} / {totalPages} — {filteredEvents.length} éléments
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="cursor-pointer"
+          >
+            Précédent
+          </Button>
+          <Button
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            className="cursor-pointer"
+          >
+            Suivant
+          </Button>
+        </div>
       </div>
 
       {filteredEvents.length === 0 && (
@@ -618,13 +654,6 @@ export default function AdminEventsPage() {
               {searchTerm || typeFilter !== "all"
                 ? "Aucun horaire ne correspond aux critères de recherche."
                 : "Aucun horaire n'est encore programmé."}
-            </CardDescription>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  )
-}
             </CardDescription>
           </CardContent>
         </Card>

@@ -331,24 +331,3 @@ export default function AdminPointsInterestPage() {
     </div>
   )
 }
-                  />
-                  <Label htmlFor="isOpen">Ouvert</Label>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <Button onClick={onSave} className="cursor-pointer">
-                    <Save className="w-4 h-4 mr-2" />
-                    Enregistrer
-                  </Button>
-                  <Button variant="secondary" onClick={() => setEditing(null)} className="cursor-pointer">
-                    Annuler
-                  </Button>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  )
-}
