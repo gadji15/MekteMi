@@ -35,11 +35,16 @@ export default function AdminPointsInterestPage() {
       setLoading(true)
       const res = await apiService.getPointsOfInterest()
       setItems(res.data || [])
-    } catch (e) {
+    } catch (e: any) {
+      if (e?.status === 401) {
+        router.push("/auth/login")
+        return
+      }
       setError(e instanceof Error ? e.message : "Erreur de chargement")
     } finally {
       setLoading(false)
     }
+  }
   }
 
   useEffect(() => {
@@ -62,9 +67,14 @@ export default function AdminPointsInterestPage() {
       await apiService.deletePointOfInterest(id)
       toast.success("Point d'intérêt supprimé")
       await fetchAll()
-    } catch (e) {
+    } catch (e: any) {
+      if (e?.status === 401) {
+        router.push("/auth/login")
+        return
+      }
       toast.error(e instanceof Error ? e.message : "Suppression impossible")
     }
+  }
   }
 
   const onSave = async () => {
@@ -94,9 +104,14 @@ export default function AdminPointsInterestPage() {
       }
       setEditing(null)
       await fetchAll()
-    } catch (e) {
+    } catch (e: any) {
+      if (e?.status === 401) {
+        router.push("/auth/login")
+        return
+      }
       toast.error(e instanceof Error ? e.message : "Enregistrement impossible")
     }
+  }
   }
 
   const counterByCategory = useMemo(() => {
