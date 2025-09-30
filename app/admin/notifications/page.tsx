@@ -15,6 +15,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { apiService } from "@/lib/api"
 import { toast } from "sonner"
 import { useAuth } from "@/contexts/auth-context"
+import { z } from "zod"
 
 type NotifType = "info" | "warning" | "urgent"
 
@@ -25,6 +26,12 @@ interface UiNotification {
   type: NotifType
   createdAt: string
 }
+
+const formSchema = z.object({
+  title: z.string().min(2, "Le titre doit contenir au moins 2 caractères"),
+  message: z.string().min(5, "Le message doit contenir au moins 5 caractères").max(500, "500 caractères maximum"),
+  type: z.enum(["info", "warning", "urgent"]),
+})
 
 export default function AdminNotificationsPage() {
   const { user, isLoading: authLoading } = useAuth()
@@ -101,8 +108,10 @@ export default function AdminNotificationsPage() {
   }
 
   const handleSubmit = async () => {
-    if (!form.title.trim() || !form.message.trim()) {
-      setError("Veuillez remplir tous les champs obligatoires")
+    const parsed = formSchema.safeParse(form)
+    if (!parsed.success) {
+      const firstError = parsed.error.errors[0]?.message || "Veuillez vérifier le formulaire"
+      setError(firstError)
       return
     }
     try {
@@ -169,6 +178,18 @@ export default function AdminNotificationsPage() {
 
   if (!user || user.role !== "admin") {
     return null
+  }
+
+  // Pagination
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+  const totalPages = Math.max(1, Math.ceil(items.length / pageSize))
+  const currentItems = items.slice((page - 1) * pageSize, page * pageSize)
+
+  const changePageSize = (value: string) => {
+    const size = Number(value)
+    setPageSize(size)
+    setPage(1)
   }
 
   return (
@@ -243,6 +264,30 @@ export default function AdminNotificationsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Filters/Pagination size */}
+      <Card className="bg-gradient-to-br from-card to-muted/30 border-0 shadow-lg">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">Affichage</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Éléments par page</label>
+              <Select value={String(pageSize)} onValueChange={changePageSize}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5">5</SelectItem>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="20">20</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Create/Edit Form */}
       {showForm && (
@@ -379,7 +424,7 @@ export default function AdminNotificationsPage() {
 
       {/* Notifications List */}
       <div className="space-y-4">
-        {items.map((n, index) => (
+        {currentItems.map((n, index) => (
           <Card
             key={n.id}
             className="hover:shadow-lg transition-all duration-300 hover:scale-[1.02] bg-gradient-to-br from-card to-muted/30 border-0 animate-fade-in"
@@ -431,6 +476,46 @@ export default function AdminNotificationsPage() {
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      {/* Pagination controls */}
+      <div className="flex items-center justify-between pt-2">
+        <div className="text-sm text-muted-foreground">
+          Page {page} / {totalPages} — {items.length} éléments
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="cursor-pointer"
+          >
+            Précédent
+          </Button>
+          <Button
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            className="cursor-pointer"
+          >
+            Suivant
+          </Button>
+        </div>
+      </div>
+
+      {items.length === 0 && (
+        <Card className="text-center py-12 bg-gradient-to-br from-card to-muted/30 border-0">
+          <CardContent>
+            <div className="animate-float mb-6">
+              <Bell className="w-12 h-12 text-muted-foreground mx-auto" />
+            </div>
+            <CardTitle className="text-xl mb-2">Aucune notification</CardTitle>
+            <CardDescription>Créez votre première notification pour communiquer avec les pèlerins.</CardDescription>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  )
+}
       </div>
 
       {items.length === 0 && (
