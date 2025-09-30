@@ -14,6 +14,18 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { apiService } from "@/lib/api"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
+import { z } from "zod"
+
+const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/
+const formSchema = z.object({
+  title: z.string().min(2, "Le titre doit contenir au moins 2 caractères"),
+  description: z.string().optional(),
+  date: z.string().optional(), // HTML input type=date fournit YYYY-MM-DD
+  startTime: z.string().optional().refine((v) => !v || timeRegex.test(v), "Heure de début invalide (HH:mm)"),
+  endTime: z.string().optional().refine((v) => !v || timeRegex.test(v), "Heure de fin invalide (HH:mm)"),
+  location: z.string().optional(),
+  type: z.enum(["prayer", "ceremony", "event"]),
+})
 
 type EventType = "prayer" | "ceremony" | "event"
 
@@ -187,8 +199,10 @@ export default function AdminEventsPage() {
   }
 
   const handleSubmit = async () => {
-    if (!form.title.trim()) {
-      setError("Le titre est requis")
+    const parsed = formSchema.safeParse(form)
+    if (!parsed.success) {
+      const firstError = parsed.error.errors[0]?.message || "Veuillez vérifier le formulaire"
+      setError(firstError)
       return
     }
     try {
@@ -575,6 +589,24 @@ export default function AdminEventsPage() {
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      {filteredEvents.length === 0 && (
+        <Card className="text-center py-12 bg-gradient-to-br from-card to-muted/30 border-0">
+          <CardContent>
+            <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+            <CardTitle className="text-xl mb-2">Aucun horaire trouvé</CardTitle>
+            <CardDescription>
+              {searchTerm || typeFilter !== "all"
+                ? "Aucun horaire ne correspond aux critères de recherche."
+                : "Aucun horaire n'est encore programmé."}
+            </CardDescription>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  )
+}
       </div>
 
       {filteredEvents.length === 0 && (
