@@ -83,10 +83,27 @@ cd mbektemi-api
 ./vendor/bin/sail up -d
 ./vendor/bin/sail artisan migrate --force
 ./vendor/bin/sail artisan db:seed
+----------
+Puis demarrer Docker DEsktop
 # Le backend sert sur http://localhost
 
 # 3) Frontend (Next.js)
 cd ..
+# 1: Vérifiez Node et npm:
+node -v
+npm -v
+# 2: Si node/npm manquent ou sont anciens, installez Node LTS (voir Option C).
+# Installez nvm:
+curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+source ~/.nvm/nvm.sh
+# Installez Node LTS récent:
+nvm install --lts
+node -v
+npm -v
+# Installez pnpm:
+npm install -g pnpm
+pnpm -v
+# 4: Installez et lancez:
 pnpm install   # ou: npm install
 pnpm dev       # ou: npm run dev
 
