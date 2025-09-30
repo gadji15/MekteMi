@@ -8,6 +8,10 @@ class ScheduleController extends Controller
 {
     public function index()
     {
-        return Schedule::orderBy('id')->get();
+        return Schedule::query()
+            ->orderBy('date')
+            ->orderBy('start_time')
+            ->orderBy('id')
+            ->get();
     }
 }

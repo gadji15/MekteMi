@@ -104,11 +104,12 @@ class DatabaseSeeder extends Seeder
             );
         }
 
-        // Seed schedules (idempotent)
+        // Seed schedules with dates (idempotent)
         $schedules = [
             [
                 'title' => "Prière collective du matin",
                 'description' => "Grande prière collective rassemblant tous les pèlerins",
+                'date' => '2025-02-17',
                 'start_time' => '05:30',
                 'end_time' => '07:00',
                 'location' => "Grande Mosquée de Touba",
@@ -117,6 +118,7 @@ class DatabaseSeeder extends Seeder
             [
                 'title' => "Cérémonie d'ouverture officielle",
                 'description' => "Ouverture officielle du Magal de Touba avec les autorités religieuses",
+                'date' => '2025-02-16',
                 'start_time' => '08:30',
                 'end_time' => '11:00',
                 'location' => "Mausolée de Cheikh Ahmadou Bamba",
@@ -125,6 +127,7 @@ class DatabaseSeeder extends Seeder
             [
                 'title' => "Récitation du Coran",
                 'description' => "Récitation collective du Saint Coran par les érudits",
+                'date' => '2025-02-17',
                 'start_time' => '09:00',
                 'end_time' => '12:00',
                 'location' => "Grande Mosquée de Touba",
