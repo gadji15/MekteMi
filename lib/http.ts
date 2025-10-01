@@ -15,7 +15,7 @@ interface HttpOptions {
 
 function buildUrl(path: string, absolute?: boolean) {
   if (absolute) return path
-  const base = config.apiBaseUrl.replace(/\/+$/, "")
+  const base = config.apiBaseUrl.replace(/\/*$/, "")
   const p = path.startsWith("/") ? path : `/${path}`
   return `${base}${p}`
 }
@@ -80,7 +80,38 @@ client.interceptors.response.use(
       data: payload?.data !== undefined ? payload.data : payload,
     }
   },
-  (error) => {
+  async (error) => {
+    // Retry once on 401 for withCredentials requests after refreshing CSRF cookie
+    const status = error?.response?.status
+    const originalConfig = error?.config as AxiosRequestConfig & { _csrfRetry?: boolean }
+    if (
+      status === 401 &&
+      originalConfig &&
+      originalConfig.withCredentials &&
+      !originalConfig._csrfRetry
+    ) {
+      try {
+        // mark to avoid infinite loops
+        originalConfig._csrfRetry = true
+        // refresh CSRF cookie
+        await client.get("/sanctum/csrf-cookie", { withCredentials: true })
+        // ensure header
+        const xsrf = readCookie("XSRF-TOKEN")
+        if (xsrf) {
+          originalConfig.headers = originalConfig.headers ?? {}
+          originalConfig.headers["X-XSRF-TOKEN"] = xsrf
+        }
+        const retryRes = await client.request(originalConfig)
+        const payload = retryRes.data
+        return Promise.resolve({
+          ...retryRes,
+          data: payload?.data !== undefined ? payload.data : payload,
+        })
+      } catch {
+        // fall through to error normalization
+      }
+    }
+
     const message =
       error?.response?.data?.message ||
       error?.response?.data?.error ||
