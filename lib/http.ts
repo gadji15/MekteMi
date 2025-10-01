@@ -36,7 +36,7 @@ function readCookie(name: string): string | null {
 const client = axios.create({
   baseURL: config.apiBaseUrl,
   timeout: config.apiTimeout,
-  withCredentials: false, // will be overridden per-request
+  withCredentials: true, // enable cookies by default
   xsrfCookieName: "XSRF-TOKEN",
   xsrfHeaderName: "X-XSRF-TOKEN",
   headers: {
@@ -138,7 +138,7 @@ export async function http<T = unknown>(path: string, options: HttpOptions = {})
     headers: options.headers,
     data: options.body,
     signal: options.signal,
-    withCredentials: options.withCredentials ?? false,
+    withCredentials: options.withCredentials ?? true, // default to true
   }
   const res = await client.request<T>(cfg)
   return res.data as T
