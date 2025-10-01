@@ -4,10 +4,12 @@ import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
 import { Analytics } from "@vercel/analytics/next"
 import { AuthProvider } from "@/contexts/auth-context"
+import { NotificationsProvider } from "@/contexts/notifications-context"
 import LayoutWrapper from "@/components/layout-wrapper"
 import "./globals.css"
 import { Suspense } from "react"
 import PWARegister from "@/components/pwa-register"
+import { Toaster } from "sonner"
 
 export const metadata: Metadata = {
   title: "MbekteMi - Application Communautaire",
@@ -75,10 +77,13 @@ export default function RootLayout({
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable} antialiased`}>
         <Suspense fallback={<div>Loading...</div>}>
           <AuthProvider>
-            <LayoutWrapper>{children}</LayoutWrapper>
+            <NotificationsProvider>
+              <LayoutWrapper>{children}</LayoutWrapper>
+            </NotificationsProvider>
           </AuthProvider>
         </Suspense>
         <PWARegister />
+        <Toaster richColors closeButton position="top-right" />
         <Analytics />
       </body>
     </html>

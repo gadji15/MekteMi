@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Menu, Home, Clock, Users, Bell, MapPin, Calendar, LogIn, User, Settings, UserPlus } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { MosqueIcon } from "@/components/custom-icons"
+import { useNotifications } from "@/contexts/notifications-context"
 
 const navigationItems = [
   { href: "/", label: "Accueil", icon: Home },
@@ -21,6 +22,7 @@ const navigationItems = [
 export function Navigation() {
   const [isOpen, setIsOpen] = useState(false)
   const { user } = useAuth()
+  const { unreadCount } = useNotifications()
 
   return (
     <nav className="bg-gradient-to-r from-background via-muted/30 to-background border-b border-border/50 backdrop-blur-sm sticky top-0 z-50">
@@ -41,6 +43,11 @@ export function Navigation() {
               >
                 <item.icon className="w-4 h-4" />
                 <span className="hidden xl:inline">{item.label}</span>
+                {item.href === "/notifications" && unreadCount > 0 && (
+                  <span className="ml-2 inline-flex items-center justify-center w-5 h-5 text-[11px] rounded-full bg-gradient-to-r from-primary to-secondary text-white">
+                    {unreadCount}
+                  </span>
+                )}
               </Link>
             ))}
 
@@ -107,6 +114,11 @@ export function Navigation() {
                 title={item.label}
               >
                 <item.icon className="w-4 h-4" />
+                {item.href === "/notifications" && unreadCount > 0 && (
+                  <span className="ml-1 inline-flex items-center justify-center w-5 h-5 text-[11px] rounded-full bg-gradient-to-r from-primary to-secondary text-white">
+                    {unreadCount}
+                  </span>
+                )}
               </Link>
             ))}
 
@@ -169,6 +181,7 @@ export function Navigation() {
 
                 {navigationItems.map((item) => {
                   const Icon = item.icon
+                  const showBadge = item.href === "/notifications" && unreadCount > 0
                   return (
                     <Link
                       key={item.href}
@@ -178,6 +191,11 @@ export function Navigation() {
                     >
                       <Icon className="h-5 w-5" />
                       <span className="font-medium">{item.label}</span>
+                      {showBadge && (
+                        <span className="ml-auto inline-flex items-center justify-center w-6 h-6 text-[11px] rounded-full bg-gradient-to-r from-primary to-secondary text-white">
+                          {unreadCount}
+                        </span>
+                      )}
                     </Link>
                   )
                 })}
