@@ -161,6 +161,17 @@ export default function AdminNotificationsPage() {
     }
   }
 
+  // Pagination
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+  const totalPages = Math.max(1, Math.ceil(items.length / pageSize))
+  const currentItems = items.slice((page - 1) * pageSize, page * pageSize)
+  const changePageSize = (value: string) => {
+    const size = Number(value)
+    setPageSize(size)
+    setPage(1)
+  }
+
   if (authLoading || loading) {
     return (
       <div className="p-6">
@@ -500,22 +511,6 @@ export default function AdminNotificationsPage() {
             Suivant
           </Button>
         </div>
-      </div>
-
-      {items.length === 0 && (
-        <Card className="text-center py-12 bg-gradient-to-br from-card to-muted/30 border-0">
-          <CardContent>
-            <div className="animate-float mb-6">
-              <Bell className="w-12 h-12 text-muted-foreground mx-auto" />
-            </div>
-            <CardTitle className="text-xl mb-2">Aucune notification</CardTitle>
-            <CardDescription>Créez votre première notification pour communiquer avec les pèlerins.</CardDescription>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  )
-}
       </div>
 
       {items.length === 0 && (

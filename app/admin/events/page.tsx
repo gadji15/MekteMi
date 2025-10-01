@@ -257,6 +257,23 @@ export default function AdminEventsPage() {
     }
   }
 
+  // Pagination
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+  const totalPages = Math.max(1, Math.ceil(filteredEvents.length / pageSize))
+  const currentItems = filteredEvents.slice((page - 1) * pageSize, page * pageSize)
+
+  useEffect(() => {
+    // Reset page if filters change
+    setPage(1)
+  }, [searchTerm, typeFilter])
+
+  const changePageSize = (value: string) => {
+    const size = Number(value)
+    setPageSize(size)
+    setPage(1)
+  }
+
   if (authLoading || isLoading) {
     return (
       <div className="p-6">
