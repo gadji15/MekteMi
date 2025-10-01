@@ -13,6 +13,15 @@ interface HttpOptions {
   withCredentials?: boolean
 }
 
+const DEBUG = process.env.NODE_ENV !== "production"
+
+function logDebug(...args: unknown[]) {
+  if (DEBUG) {
+    // eslint-disable-next-line no-console
+    console.debug("[HTTP]", ...args)
+  }
+}
+
 function buildUrl(path: string, absolute?: boolean) {
   if (absolute) return path
   const base = config.apiBaseUrl.replace(/\/*$/, "")
@@ -44,46 +53,69 @@ const client = axios.create({
   },
 })
 
-// Optional: attach legacy bearer token if stored and not using cookies
+// Request interceptor with diagnostics
 client.interceptors.request.use((cfg) => {
   try {
+    const xsrfCookie = readCookie("XSRF-TOKEN")
     if (typeof window !== "undefined") {
       const token = localStorage.getItem("auth-token")
       if (token && !cfg.withCredentials) {
         cfg.headers = cfg.headers ?? {}
         cfg.headers["Authorization"] = `Bearer ${token}`
       }
-      // Extra safety: when using cookies, ensure XSRF header is present
-      if (cfg.withCredentials) {
-        const xsrf = readCookie("XSRF-TOKEN")
-        if (xsrf) {
-          cfg.headers = cfg.headers ?? {}
-          // Do not overwrite if already set by axios
-          if (!("X-XSRF-TOKEN" in cfg.headers)) {
-            cfg.headers["X-XSRF-TOKEN"] = xsrf
-          }
+    }
+    // Ensure xsrf header when using cookies
+    if (cfg.withCredentials) {
+      const xsrf = xsrfCookie
+      if (xsrf) {
+        cfg.headers = cfg.headers ?? {}
+        if (!("X-XSRF-TOKEN" in cfg.headers)) {
+          cfg.headers["X-XSRF-TOKEN"] = xsrf
         }
       }
     }
-  } catch {
-    // ignore
+
+    logDebug("REQUEST", {
+      method: cfg.method,
+      url: cfg.baseURL ? `${cfg.baseURL}${cfg.url}` : cfg.url,
+      withCredentials: cfg.withCredentials,
+      hasXsrfCookie: Boolean(xsrfCookie),
+      hasXsrfHeader: Boolean(cfg.headers && (cfg.headers as any)["X-XSRF-TOKEN"]),
+    })
+  } catch (e) {
+    logDebug("REQUEST-INTERCEPTOR-ERROR", e)
   }
   return cfg
 })
 
-// Normalize Laravel response: if {data: ...} exists, unwrap it
+// Normalize Laravel response and add diagnostics
 client.interceptors.response.use(
   (res) => {
     const payload = res.data
+    const normalized = payload?.data !== undefined ? payload.data : payload
+    logDebug("RESPONSE", {
+      url: res.config?.url,
+      status: res.status,
+      ok: true,
+    })
     return {
       ...res,
-      data: payload?.data !== undefined ? payload.data : payload,
+      data: normalized,
     }
   },
   async (error) => {
-    // Retry once on 401 for withCredentials requests after refreshing CSRF cookie
     const status = error?.response?.status
     const originalConfig = error?.config as AxiosRequestConfig & { _csrfRetry?: boolean }
+    logDebug("ERROR", {
+      url: originalConfig?.url,
+      status,
+      data: error?.response?.data,
+      withCredentials: originalConfig?.withCredentials,
+      hasXsrfCookie: typeof document !== "undefined" ? Boolean(readCookie("XSRF-TOKEN")) : undefined,
+      hasXsrfHeader: Boolean(originalConfig?.headers && (originalConfig.headers as any)["X-XSRF-TOKEN"]),
+    })
+
+    // Retry once on 401 for withCredentials requests after refreshing CSRF cookie
     if (
       status === 401 &&
       originalConfig &&
@@ -91,23 +123,27 @@ client.interceptors.response.use(
       !originalConfig._csrfRetry
     ) {
       try {
-        // mark to avoid infinite loops
         originalConfig._csrfRetry = true
-        // refresh CSRF cookie
+        logDebug("401-RETRY", { step: "fetch-csrf-cookie" })
         await client.get("/sanctum/csrf-cookie", { withCredentials: true })
-        // ensure header
         const xsrf = readCookie("XSRF-TOKEN")
         if (xsrf) {
           originalConfig.headers = originalConfig.headers ?? {}
-          originalConfig.headers["X-XSRF-TOKEN"] = xsrf
+          ;(originalConfig.headers as any)["X-XSRF-TOKEN"] = xsrf
         }
+        logDebug("401-RETRY", {
+          step: "retry-request",
+          url: originalConfig.url,
+          hasXsrfCookie: Boolean(xsrf),
+        })
         const retryRes = await client.request(originalConfig)
         const payload = retryRes.data
         return Promise.resolve({
           ...retryRes,
           data: payload?.data !== undefined ? payload.data : payload,
         })
-      } catch {
+      } catch (retryErr) {
+        logDebug("401-RETRY-FAILED", retryErr)
         // fall through to error normalization
       }
     }
@@ -128,7 +164,9 @@ client.interceptors.response.use(
  * Fetch the Sanctum CSRF cookie to enable session-based auth.
  */
 export async function fetchCsrfCookie(): Promise<void> {
+  logDebug("FETCH-CSRF-COOKIE", { url: "/sanctum/csrf-cookie" })
   await client.get("/sanctum/csrf-cookie", { withCredentials: true })
+  logDebug("FETCH-CSRF-COOKIE-DONE", { hasXsrfCookie: Boolean(readCookie("XSRF-TOKEN")) })
 }
 
 export async function http<T = unknown>(path: string, options: HttpOptions = {}): Promise<T> {
@@ -140,6 +178,11 @@ export async function http<T = unknown>(path: string, options: HttpOptions = {})
     signal: options.signal,
     withCredentials: options.withCredentials ?? true, // default to true
   }
+  logDebug("HTTP-CALL", {
+    method: cfg.method,
+    url: cfg.url,
+    withCredentials: cfg.withCredentials,
+  })
   const res = await client.request<T>(cfg)
   return res.data as T
 }
