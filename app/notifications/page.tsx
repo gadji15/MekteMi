@@ -1,21 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Bell, AlertTriangle, Info, Clock, Sparkles } from "lucide-react"
 import { NotificationBellIcon } from "@/components/custom-icons"
-import { apiService } from "@/lib/api"
-
-type NotificationItem = {
-  id: string
-  title: string
-  message: string
-  type: "info" | "warning" | "urgent" | string
-  created_at?: string
-  createdAt?: string | Date
-  isRead?: boolean
-}
+import { useNotifications } from "@/contexts/notifications-context"
 
 const getNotificationIcon = (type: string) => {
   switch (type) {
@@ -67,30 +57,15 @@ const formatDate = (value?: string | Date) => {
 }
 
 export default function NotificationsPage() {
-  const [items, setItems] = useState<NotificationItem[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState("")
+  const { notifications: items, isLoading, error, unreadCount, markAllAsRead, refresh } = useNotifications()
 
   useEffect(() => {
-    let mounted = true
-    ;(async () => {
-      try {
-        const res = await apiService.getNotifications()
-        if (!mounted) return
-        setItems(res.data || [])
-      } catch (e) {
-        if (!mounted) return
-        setError(e instanceof Error ? e.message : "Impossible de charger les notifications")
-      } finally {
-        if (mounted) setIsLoading(false)
-      }
-    })()
-    return () => {
-      mounted = false
-    }
+    // Mark all as read when visiting the notifications page
+    markAllAsRead()
+    // Ensure data is fresh on entry
+    void refresh()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-
-  const unreadCount = items.filter((n) => !n.isRead).length
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
@@ -161,14 +136,14 @@ export default function NotificationsPage() {
                 <CardHeader>
                   <div className="flex items-start gap-4">
                     <div className="flex-shrink-0 mt-1 w-12 h-12 bg-gradient-to-br from-primary/10 to-secondary/10 rounded-xl flex items-center justify-center group-hover:rotate-12 transition-transform duration-300">
-                      {getNotificationIcon(notification.type)}
+                      {getNotificationIcon(String(notification.type))}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-4">
                         <CardTitle className="text-xl leading-tight">{notification.title}</CardTitle>
                         <div className="flex flex-col items-end gap-3 flex-shrink-0">
-                          <Badge className={getNotificationColor(notification.type)}>
-                            {getTypeLabel(notification.type)}
+                          <Badge className={getNotificationColor(String(notification.type))}>
+                            {getTypeLabel(String(notification.type))}
                           </Badge>
                           {!notification.isRead && (
                             <div className="w-3 h-3 bg-gradient-to-r from-primary to-secondary rounded-full animate-pulse"></div>
@@ -183,7 +158,18 @@ export default function NotificationsPage() {
                   <div className="flex items-center gap-3 text-sm text-muted-foreground bg-muted/30 px-4 py-2 rounded-lg">
                     <Clock className="w-4 h-4 text-primary" />
                     <span className="font-medium">
-                      {formatDate(notification.createdAt ?? notification.created_at)}
+                      {formatDate((notification as any).createdAt ?? (notification as any).created_at)}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </main>
+    </div>
+  )
+}
                     </span>
                   </div>
                 </CardContent>
