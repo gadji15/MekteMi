@@ -33,16 +33,16 @@ importers:
         specifier: 2.2.4
         version: 2.2.4(@types/react-dom@18.0.0)(@types/react@18.3.24)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@radix-ui/react-dialog':
-        specifier: latest
+        specifier: 1.1.15
         version: 1.1.15(@types/react-dom@18.0.0)(@types/react@18.3.24)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@radix-ui/react-dropdown-menu':
-        specifier: latest
+        specifier: 2.1.16
         version: 2.1.16(@types/react-dom@18.0.0)(@types/react@18.3.24)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@radix-ui/react-hover-card':
         specifier: 1.1.4
         version: 1.1.4(@types/react-dom@18.0.0)(@types/react@18.3.24)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@radix-ui/react-label':
-        specifier: latest
+        specifier: 2.1.7
         version: 2.1.7(@types/react-dom@18.0.0)(@types/react@18.3.24)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@radix-ui/react-menubar':
         specifier: 1.1.4
@@ -63,7 +63,7 @@ importers:
         specifier: 1.2.2
         version: 1.2.2(@types/react-dom@18.0.0)(@types/react@18.3.24)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@radix-ui/react-select':
-        specifier: latest
+        specifier: 2.2.6
         version: 2.2.6(@types/react-dom@18.0.0)(@types/react@18.3.24)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@radix-ui/react-separator':
         specifier: 1.1.1
@@ -72,10 +72,10 @@ importers:
         specifier: 1.2.2
         version: 1.2.2(@types/react-dom@18.0.0)(@types/react@18.3.24)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@radix-ui/react-slot':
-        specifier: latest
+        specifier: 1.2.3
         version: 1.2.3(@types/react@18.3.24)(react@18.2.0)
       '@radix-ui/react-switch':
-        specifier: latest
+        specifier: 1.2.6
         version: 1.2.6(@types/react-dom@18.0.0)(@types/react@18.3.24)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@radix-ui/react-tabs':
         specifier: 1.1.2
@@ -93,7 +93,7 @@ importers:
         specifier: 1.1.6
         version: 1.1.6(@types/react-dom@18.0.0)(@types/react@18.3.24)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@vercel/analytics':
-        specifier: latest
+        specifier: 1.5.0
         version: 1.5.0(next@14.2.16(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(react@18.2.0)
       autoprefixer:
         specifier: ^10.4.20
@@ -117,7 +117,7 @@ importers:
         specifier: 8.5.1
         version: 8.5.1(react@18.2.0)
       geist:
-        specifier: latest
+        specifier: 1.5.1
         version: 1.5.1(next@14.2.16(react-dom@18.2.0(react@18.2.0))(react@18.2.0))
       input-otp:
         specifier: 1.4.1
@@ -129,7 +129,7 @@ importers:
         specifier: 14.2.16
         version: 14.2.16(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       next-themes:
-        specifier: latest
+        specifier: 0.4.6
         version: 0.4.6(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       react:
         specifier: 18.2.0
@@ -147,7 +147,7 @@ importers:
         specifier: ^2.1.7
         version: 2.1.7(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       recharts:
-        specifier: latest
+        specifier: 3.2.1
         version: 3.2.1(@types/react@18.3.24)(react-dom@18.2.0(react@18.2.0))(react-is@19.1.1)(react@18.2.0)(redux@5.0.1)
       sonner:
         specifier: ^1.7.4

@@ -3,6 +3,9 @@
 import type React from "react"
 
 import { useState } from "react"
+import { useForm, Controller } from "react-hook-form"
+import { z } from "zod"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,102 +17,89 @@ import { apiService } from "@/lib/api"
 import { Users, CheckCircle, AlertCircle, Loader2, Sparkles, Heart } from "lucide-react"
 import { CommunityIcon } from "@/components/custom-icons"
 
+const formSchema = z.object({
+  firstName: z.string().min(2, "Le prénom doit contenir au moins 2 caractères"),
+  lastName: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
+  email: z.string().email("Veuillez entrer une adresse email valide"),
+  phone: z.string().min(8, "Veuillez entrer un numéro de téléphone valide"),
+  city: z.string().min(2, "La ville est requise"),
+  country: z.string().min(2, "Le pays est requis"),
+  accommodationType: z.string().optional().default(""),
+  specialNeeds: z.string().optional().default(""),
+})
+
+type FormValues = z.infer<typeof formSchema>
+
 export default function InscriptionPage() {
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState("")
+  const [serverError, setServerError] = useState("")
   const [currentStep, setCurrentStep] = useState(1)
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    city: "",
-    country: "",
-    accommodationType: "",
-    specialNeeds: "",
+
+  const {
+    register,
+    control,
+    handleSubmit,
+    getValues,
+    trigger,
+    reset,
+    formState: { errors },
+  } = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+      city: "",
+      country: "",
+      accommodationType: "",
+      specialNeeds: "",
+    },
+    mode: "onBlur",
   })
 
   const totalSteps = 3
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
+  const onSubmit = async (values: FormValues) => {
+    setServerError("")
     setIsLoading(true)
-
     try {
-      // Validation
-      if (
-        !formData.firstName ||
-        !formData.lastName ||
-        !formData.email ||
-        !formData.phone ||
-        !formData.city ||
-        !formData.country
-      ) {
-        throw new Error("Veuillez remplir tous les champs obligatoires")
-      }
-
-      // Email validation
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-      if (!emailRegex.test(formData.email)) {
-        throw new Error("Veuillez entrer une adresse email valide")
-      }
-
-      // Phone validation (basic)
-      if (formData.phone.length < 8) {
-        throw new Error("Veuillez entrer un numéro de téléphone valide")
-      }
-
-      const response = await apiService.registerPilgrim(formData)
-
+      const response = await apiService.registerPilgrim(values)
       if (response.success) {
         setIsSubmitted(true)
-        // Reset form
-        setFormData({
-          firstName: "",
-          lastName: "",
-          email: "",
-          phone: "",
-          city: "",
-          country: "",
-          accommodationType: "",
-          specialNeeds: "",
-        })
+        reset()
       } else {
         throw new Error(response.message || "Une erreur est survenue")
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Une erreur est survenue")
+      setServerError(err instanceof Error ? err.message : "Une erreur est survenue")
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-    // Clear error when user starts typing
-    if (error) setError("")
+  const nextStep = async () => {
+    if (currentStep === 1) {
+      const ok = await trigger(["firstName", "lastName", "email", "phone"])
+      if (!ok) return
+    }
+    if (currentStep === 2) {
+      const ok = await trigger(["city", "country"])
+      if (!ok) return
+    }
+    setCurrentStep((s) => Math.min(s + 1, totalSteps))
   }
 
-  const nextStep = () => {
-    if (currentStep < totalSteps) {
-      setCurrentStep(currentStep + 1)
-    }
-  }
-
-  const prevStep = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1)
-    }
-  }
+  const prevStep = () => setCurrentStep((s) => Math.max(1, s - 1))
 
   const canProceedToStep2 = () => {
-    return formData.firstName && formData.lastName && formData.email && formData.phone
+    const v = getValues()
+    return v.firstName && v.lastName && v.email && v.phone && !errors.firstName && !errors.lastName && !errors.email && !errors.phone
   }
-
   const canProceedToStep3 = () => {
-    return formData.city && formData.country
+    const v = getValues()
+    return v.city && v.country && !errors.city && !errors.country
   }
 
   if (isSubmitted) {
@@ -235,11 +225,11 @@ export default function InscriptionPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-8">
-              {error && (
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+              {serverError && (
                 <Alert className="border-destructive/50 bg-destructive/5 animate-shake">
                   <AlertCircle className="h-5 w-5 text-destructive" />
-                  <AlertDescription className="text-destructive font-medium">{error}</AlertDescription>
+                  <AlertDescription className="text-destructive font-medium">{serverError}</AlertDescription>
                 </Alert>
               )}
 
@@ -253,13 +243,14 @@ export default function InscriptionPage() {
                       </Label>
                       <Input
                         id="firstName"
-                        value={formData.firstName}
-                        onChange={(e) => handleInputChange("firstName", e.target.value)}
-                        required
                         placeholder="Votre prénom"
                         disabled={isLoading}
                         className="h-12 border-border/50 focus:border-primary transition-all duration-300 focus:scale-[1.02]"
+                        {...register("firstName")}
                       />
+                      {errors.firstName && (
+                        <p className="text-sm text-destructive">{errors.firstName.message}</p>
+                      )}
                     </div>
                     <div className="space-y-3">
                       <Label htmlFor="lastName" className="text-base font-medium">
@@ -267,13 +258,12 @@ export default function InscriptionPage() {
                       </Label>
                       <Input
                         id="lastName"
-                        value={formData.lastName}
-                        onChange={(e) => handleInputChange("lastName", e.target.value)}
-                        required
                         placeholder="Votre nom de famille"
                         disabled={isLoading}
                         className="h-12 border-border/50 focus:border-primary transition-all duration-300 focus:scale-[1.02]"
+                        {...register("lastName")}
                       />
+                      {errors.lastName && <p className="text-sm text-destructive">{errors.lastName.message}</p>}
                     </div>
                   </div>
 
@@ -284,13 +274,12 @@ export default function InscriptionPage() {
                     <Input
                       id="email"
                       type="email"
-                      value={formData.email}
-                      onChange={(e) => handleInputChange("email", e.target.value)}
-                      required
                       placeholder="votre.email@exemple.com"
                       disabled={isLoading}
                       className="h-12 border-border/50 focus:border-primary transition-all duration-300 focus:scale-[1.02]"
+                      {...register("email")}
                     />
+                    {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
                   </div>
 
                   <div className="space-y-3">
@@ -300,13 +289,12 @@ export default function InscriptionPage() {
                     <Input
                       id="phone"
                       type="tel"
-                      value={formData.phone}
-                      onChange={(e) => handleInputChange("phone", e.target.value)}
-                      required
                       placeholder="+221 XX XXX XX XX"
                       disabled={isLoading}
                       className="h-12 border-border/50 focus:border-primary transition-all duration-300 focus:scale-[1.02]"
+                      {...register("phone")}
                     />
+                    {errors.phone && <p className="text-sm text-destructive">{errors.phone.message}</p>}
                   </div>
                 </div>
               )}
@@ -321,41 +309,47 @@ export default function InscriptionPage() {
                       </Label>
                       <Input
                         id="city"
-                        value={formData.city}
-                        onChange={(e) => handleInputChange("city", e.target.value)}
-                        required
                         placeholder="Votre ville"
                         disabled={isLoading}
                         className="h-12 border-border/50 focus:border-primary transition-all duration-300 focus:scale-[1.02]"
+                        {...register("city")}
                       />
+                      {errors.city && <p className="text-sm text-destructive">{errors.city.message}</p>}
                     </div>
                     <div className="space-y-3">
                       <Label htmlFor="country" className="text-base font-medium">
                         Pays *
                       </Label>
-                      <Select
-                        value={formData.country}
-                        onValueChange={(value) => handleInputChange("country", value)}
-                        disabled={isLoading}
-                      >
-                        <SelectTrigger className="h-12 border-border/50 focus:border-primary transition-all duration-300">
-                          <SelectValue placeholder="Sélectionnez votre pays" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="senegal">Sénégal</SelectItem>
-                          <SelectItem value="gambia">Gambie</SelectItem>
-                          <SelectItem value="mauritania">Mauritanie</SelectItem>
-                          <SelectItem value="mali">Mali</SelectItem>
-                          <SelectItem value="guinea">Guinée</SelectItem>
-                          <SelectItem value="burkina-faso">Burkina Faso</SelectItem>
-                          <SelectItem value="cote-ivoire">Côte d'Ivoire</SelectItem>
-                          <SelectItem value="niger">Niger</SelectItem>
-                          <SelectItem value="guinea-bissau">Guinée-Bissau</SelectItem>
-                          <SelectItem value="france">France</SelectItem>
-                          <SelectItem value="usa">États-Unis</SelectItem>
-                          <SelectItem value="other">Autre</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Controller
+                        control={control}
+                        name="country"
+                        render={({ field }) => (
+                          <Select
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            disabled={isLoading}
+                          >
+                            <SelectTrigger className="h-12 border-border/50 focus:border-primary transition-all duration-300">
+                              <SelectValue placeholder="Sélectionnez votre pays" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="senegal">Sénégal</SelectItem>
+                              <SelectItem value="gambia">Gambie</SelectItem>
+                              <SelectItem value="mauritania">Mauritanie</SelectItem>
+                              <SelectItem value="mali">Mali</SelectItem>
+                              <SelectItem value="guinea">Guinée</SelectItem>
+                              <SelectItem value="burkina-faso">Burkina Faso</SelectItem>
+                              <SelectItem value="cote-ivoire">Côte d'Ivoire</SelectItem>
+                              <SelectItem value="niger">Niger</SelectItem>
+                              <SelectItem value="guinea-bissau">Guinée-Bissau</SelectItem>
+                              <SelectItem value="france">France</SelectItem>
+                              <SelectItem value="usa">États-Unis</SelectItem>
+                              <SelectItem value="other">Autre</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                      {errors.country && <p className="text-sm text-destructive">{errors.country.message}</p>}
                     </div>
                   </div>
                 </div>
@@ -368,23 +362,25 @@ export default function InscriptionPage() {
                     <Label htmlFor="accommodationType" className="text-base font-medium">
                       Type d'hébergement souhaité
                     </Label>
-                    <Select
-                      value={formData.accommodationType}
-                      onValueChange={(value) => handleInputChange("accommodationType", value)}
-                      disabled={isLoading}
-                    >
-                      <SelectTrigger className="h-12 border-border/50 focus:border-primary transition-all duration-300">
-                        <SelectValue placeholder="Sélectionnez un type d'hébergement" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="family">Chez une famille d'accueil</SelectItem>
-                        <SelectItem value="hotel">Hôtel</SelectItem>
-                        <SelectItem value="guesthouse">Maison d'hôtes</SelectItem>
-                        <SelectItem value="camping">Camping organisé</SelectItem>
-                        <SelectItem value="own">J'ai mon propre hébergement</SelectItem>
-                        <SelectItem value="none">Pas d'hébergement nécessaire</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Controller
+                      control={control}
+                      name="accommodationType"
+                      render={({ field }) => (
+                        <Select value={field.value} onValueChange={field.onChange} disabled={isLoading}>
+                          <SelectTrigger className="h-12 border-border/50 focus:border-primary transition-all duration-300">
+                            <SelectValue placeholder="Sélectionnez un type d'hébergement" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="family">Chez une famille d'accueil</SelectItem>
+                            <SelectItem value="hotel">Hôtel</SelectItem>
+                            <SelectItem value="guesthouse">Maison d'hôtes</SelectItem>
+                            <SelectItem value="camping">Camping organisé</SelectItem>
+                            <SelectItem value="own">J'ai mon propre hébergement</SelectItem>
+                            <SelectItem value="none">Pas d'hébergement nécessaire</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
                   </div>
 
                   <div className="space-y-3">
@@ -393,12 +389,11 @@ export default function InscriptionPage() {
                     </Label>
                     <Textarea
                       id="specialNeeds"
-                      value={formData.specialNeeds}
-                      onChange={(e) => handleInputChange("specialNeeds", e.target.value)}
                       placeholder="Mentionnez tout besoin spécial (mobilité réduite, régime alimentaire, allergies, etc.)"
                       rows={4}
                       disabled={isLoading}
                       className="border-border/50 focus:border-primary resize-none transition-all duration-300 focus:scale-[1.02]"
+                      {...register("specialNeeds")}
                     />
                   </div>
                 </div>

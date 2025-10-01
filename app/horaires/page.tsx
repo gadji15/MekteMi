@@ -1,17 +1,19 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Clock, MapPin, Calendar, Sun } from "lucide-react"
 import { PrayerIcon, MosqueIcon } from "@/components/custom-icons"
 import { HeroSection } from "@/components/hero-section"
 import { apiService } from "@/lib/api"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 type ScheduleItem = {
   id: string
   title: string
   description?: string
+  date?: string
   start_time?: string
   end_time?: string
   location?: string
@@ -57,10 +59,24 @@ const getTypeLabel = (type?: string) => {
   }
 }
 
+const formatDate = (date?: string) => {
+  if (!date) return ""
+  const d = new Date(date)
+  if (Number.isNaN(d.getTime())) return ""
+  return new Intl.DateTimeFormat("fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(d)
+}
+
 export default function HorairesPage() {
   const [items, setItems] = useState<ScheduleItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string>("")
+  const [selectedType, setSelectedType] = useState<string>("all")
+  const [selectedDate, setSelectedDate] = useState<string>("all")
 
   useEffect(() => {
     let mounted = true
@@ -81,6 +97,21 @@ export default function HorairesPage() {
     }
   }, [])
 
+  // Compute filters
+  const dates = useMemo(() => {
+    const set = new Set<string>()
+    for (const it of items) if (it.date) set.add(it.date)
+    return Array.from(set).sort((a, b) => a.localeCompare(b))
+  }, [items])
+
+  const filtered = useMemo(() => {
+    return items.filter((it) => {
+      const okType = selectedType === "all" ? true : (it.type || "") === selectedType
+      const okDate = selectedDate === "all" ? true : (it.date || "") === selectedDate
+      return okType && okDate
+    })
+  }, [items, selectedType, selectedDate])
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
       <HeroSection
@@ -98,6 +129,46 @@ export default function HorairesPage() {
       </HeroSection>
 
       <main className="max-w-6xl mx-auto px-4 py-12">
+        {/* Filters */}
+        {!isLoading && !error && items.length > 0 && (
+          <Card className="mb-8 bg-gradient-to-br from-card to-muted/30 border-0">
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Filtrer par type</p>
+                  <Select value={selectedType} onValueChange={setSelectedType}>
+                    <SelectTrigger className="h-10">
+                      <SelectValue placeholder="Tous les types" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tous</SelectItem>
+                      <SelectItem value="prayer">Prière</SelectItem>
+                      <SelectItem value="event">Événement</SelectItem>
+                      <SelectItem value="ceremony">Cérémonie</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Filtrer par date</p>
+                  <Select value={selectedDate} onValueChange={setSelectedDate}>
+                    <SelectTrigger className="h-10">
+                      <SelectValue placeholder="Toutes les dates" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Toutes</SelectItem>
+                      {dates.map((d) => (
+                        <SelectItem key={d} value={d}>
+                          {formatDate(d)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {isLoading ? (
           <div className="grid gap-6">
             {[...Array(4)].map((_, i) => (
@@ -121,15 +192,15 @@ export default function HorairesPage() {
               <p className="text-destructive font-medium">{error}</p>
             </CardContent>
           </Card>
-        ) : items.length === 0 ? (
+        ) : filtered.length === 0 ? (
           <Card className="border-0 bg-gradient-to-br from-card to-muted/30">
             <CardContent className="p-6">
-              <p className="text-muted-foreground">Aucun horaire disponible pour le moment.</p>
+              <p className="text-muted-foreground">Aucun horaire disponible avec ces filtres.</p>
             </CardContent>
           </Card>
         ) : (
           <div className="grid gap-8">
-            {items.map((schedule, index) => {
+            {filtered.map((schedule, index) => {
               const IconComponent = getTypeIcon(schedule.type)
               const start = schedule.start_time ?? ""
               const end = schedule.end_time ?? ""
@@ -161,6 +232,13 @@ export default function HorairesPage() {
                           )}
                         </div>
                       </div>
+                      {/* Date badge */}
+                      {schedule.date && (
+                        <div className="flex items-center gap-2 bg-muted/50 px-3 py-2 rounded-lg text-sm text-muted-foreground">
+                          <Calendar className="w-4 h-4" />
+                          <span className="font-medium">{formatDate(schedule.date)}</span>
+                        </div>
+                      )}
                     </div>
                   </CardHeader>
                   <CardContent>

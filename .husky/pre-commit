@@ -1,9 +1,17 @@
 #!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
+# Husky v10 compatible hook (no husky.sh sourcing)
+# Safe pre-commit: runs lint and type-check if package managers available.
+set -e
 
 echo "Running pre-commit checks..."
+
 if command -v pnpm >/dev/null 2>&1; then
   pnpm lint && pnpm type-check
-else
+elif command -v npm >/dev/null 2>&1; then
   npm run lint && npm run type-check
+elif command -v npx >/dev/null 2>&1; then
+  npx -y eslint . && npx -y tsc --noEmit
+else
+  echo "Warning: neither pnpm, npm nor npx found in PATH. Skipping lint/type-check."
+  echo "Tip: set HUSKY=0 to bypass hooks temporarily: HUSKY=0 git commit -m \"msg\""
 fi
