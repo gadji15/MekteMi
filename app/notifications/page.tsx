@@ -1,11 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Bell, AlertTriangle, Info, Clock, Sparkles } from "lucide-react"
 import { NotificationBellIcon } from "@/components/custom-icons"
 import { apiService } from "@/lib/api"
+import { useQuery } from "@tanstack/react-query"
 
 type NotificationItem = {
   id: string
@@ -67,28 +67,13 @@ const formatDate = (value?: string | Date) => {
 }
 
 export default function NotificationsPage() {
-  const [items, setItems] = useState<NotificationItem[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState("")
-
-  useEffect(() => {
-    let mounted = true
-    ;(async () => {
-      try {
-        const res = await apiService.getNotifications()
-        if (!mounted) return
-        setItems(res.data || [])
-      } catch (e) {
-        if (!mounted) return
-        setError(e instanceof Error ? e.message : "Impossible de charger les notifications")
-      } finally {
-        if (mounted) setIsLoading(false)
-      }
-    })()
-    return () => {
-      mounted = false
-    }
-  }, [])
+  const { data: items = [], isLoading, error } = useQuery({
+    queryKey: ["notifications"],
+    queryFn: async () => {
+      const res = await apiService.getNotifications()
+      return res.data || []
+    },
+  })
 
   const unreadCount = items.filter((n) => !n.isRead).length
 
@@ -133,7 +118,7 @@ export default function NotificationsPage() {
         ) : error ? (
           <Card className="border-0 bg-gradient-to-br from-card to-muted/30">
             <CardContent className="p-6">
-              <p className="text-destructive font-medium">{error}</p>
+              <p className="text-destructive font-medium">{(error as Error).message}</p>
             </CardContent>
           </Card>
         ) : items.length === 0 ? (
@@ -184,6 +169,17 @@ export default function NotificationsPage() {
                     <Clock className="w-4 h-4 text-primary" />
                     <span className="font-medium">
                       {formatDate(notification.createdAt ?? notification.created_at)}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </main>
+    </div>
+  )
+}
                     </span>
                   </div>
                 </CardContent>

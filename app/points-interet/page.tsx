@@ -1,10 +1,10 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { MapPin, Clock, Phone, Utensils, Bed, Car, Heart, Building } from "lucide-react"
 import { apiService } from "@/lib/api"
+import { useQuery } from "@tanstack/react-query"
 
 type Poi = {
   id: string
@@ -71,33 +71,17 @@ const getCategoryLabel = (category: string) => {
 }
 
 export default function PointsInteretPage() {
-  const [items, setItems] = useState<Poi[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState("")
-
-  useEffect(() => {
-    let mounted = true
-    ;(async () => {
-      try {
-        const res = await apiService.getPointsOfInterest()
-        if (!mounted) return
-        setItems(res.data || [])
-      } catch (e) {
-        if (!mounted) return
-        setError(e instanceof Error ? e.message : "Impossible de charger les points d'intérêt")
-      } finally {
-        if (mounted) setIsLoading(false)
-      }
-    })()
-    return () => {
-      mounted = false
-    }
-  }, [])
+  const { data: items = [], isLoading, error } = useQuery({
+    queryKey: ["points-of-interest"],
+    queryFn: async () => {
+      const res = await apiService.getPointsOfInterest()
+      return res.data || []
+    },
+  })
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
       
-
       <main className="max-w-4xl mx-auto px-4 py-8">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold mb-4 text-balance">Points d'intérêt</h1>
@@ -123,7 +107,7 @@ export default function PointsInteretPage() {
         ) : error ? (
           <Card className="border-0 bg-gradient-to-br from-card to-muted/30">
             <CardContent className="p-6">
-              <p className="text-destructive font-medium">{error}</p>
+              <p className="text-destructive font-medium">{(error as Error).message}</p>
             </CardContent>
           </Card>
         ) : items.length === 0 ? (
