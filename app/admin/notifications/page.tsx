@@ -17,6 +17,8 @@ import { toast } from "sonner"
 import { useAuth } from "@/contexts/auth-context"
 import { z } from "zod"
 import { config } from "@/lib/config"
+import { fetchCsrfCookie } from "@/lib/http"
+import { authService } from "@/lib/auth"
 
 type NotifType = "info" | "warning" | "urgent"
 
@@ -204,6 +206,22 @@ export default function AdminNotificationsPage() {
     setPage(1)
   }
 
+  // Debug helpers
+  const testCsrf = async () => {
+    await fetchCsrfCookie()
+    toast.success(`CSRF rafraîchi — XSRF=${hasXsrfCookie() ? "present" : "absent"}`)
+  }
+
+  const testSession = async () => {
+    const me = await authService.getCurrentUser()
+    if (me) {
+      toast.success(`Session OK — ${me.email}`)
+      console.debug("[ADMIN] /api/auth/me", me)
+    } else {
+      toast.error("Pas de session active (401 sur /api/auth/me)")
+    }
+  }
+
   if (authLoading || loading) {
     return (
       <div className="p-6">
@@ -228,9 +246,19 @@ export default function AdminNotificationsPage() {
       {/* Debug panel */}
       <Card className="bg-gradient-to-br from-card to-muted/30 border-0">
         <CardContent className="p-4">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Bug className="w-4 h-4 text-primary" />
-            <span>Debug: API={config.apiBaseUrl} — XSRF={hasXsrfCookie() ? "present" : "absent"}</span>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <Bug className="w-4 h-4 text-primary" />
+              <span>Debug: API={config.apiBaseUrl} — XSRF={hasXsrfCookie() ? "present" : "absent"}</span>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={testCsrf} className="cursor-pointer">
+                Rafraîchir CSRF
+              </Button>
+              <Button variant="outline" size="sm" onClick={testSession} className="cursor-pointer">
+                Vérifier session
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
