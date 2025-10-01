@@ -25,11 +25,42 @@ export interface RegisterData {
   confirmPassword: string
 }
 
+function readXsrfFromCookie(): string | null {
+  if (typeof document === "undefined") return null
+  const name = "XSRF-TOKEN="
+  const found = document.cookie.split("; ").find((c) => c.startsWith(name))
+  if (!found) return null
+  try {
+    return decodeURIComponent(found.split("=")[1] || "")
+  } catch {
+    return found.split("=")[1] || ""
+  }
+}
+
 export const authService = {
   async login(credentials: LoginCredentials): Promise<{ user: User }> {
     // Ensure CSRF cookie for Sanctum SPA
     await fetchCsrfCookie()
-    await httpPost("/api/auth/login", credentials, { withCredentials: true })
+    const xsrf = readXsrfFromCookie()
+    // Normalize payload (trim)
+    const payload = {
+      email: credentials.email.trim(),
+      password: credentials.password,
+    }
+    // Send explicit XSRF header to avoid timing or header injection issues
+    await httpPost("/api/auth/login", payload, {
+      withCredentials: true,
+      headers: xsrf
+        ? {
+            "X-Requested-With": "XMLHttpRequest",
+            "X-XSRF-TOKEN": xsrf,
+            Accept: "application/json",
+          }
+        : {
+            "X-Requested-With": "XMLHttpRequest",
+            Accept: "application/json",
+          },
+    })
     // Then fetch the user
     const user = await httpGet<User>("/api/auth/me", { withCredentials: true })
     return { user }
@@ -40,7 +71,26 @@ export const authService = {
       throw new Error("Les mots de passe ne correspondent pas")
     }
     await fetchCsrfCookie()
-    await httpPost("/api/auth/register", data, { withCredentials: true })
+    const xsrf = readXsrfFromCookie()
+    const payload = {
+      firstName: data.firstName.trim(),
+      lastName: data.lastName.trim(),
+      email: data.email.trim(),
+      password: data.password,
+    }
+    await httpPost("/api/auth/register", payload, {
+      withCredentials: true,
+      headers: xsrf
+        ? {
+            "X-Requested-With": "XMLHttpRequest",
+            "X-XSRF-TOKEN": xsrf,
+            Accept: "application/json",
+          }
+        : {
+            "X-Requested-With": "XMLHttpRequest",
+            Accept: "application/json",
+          },
+    })
     const user = await httpGet<User>("/api/auth/me", { withCredentials: true })
     return { user }
   },
@@ -48,7 +98,24 @@ export const authService = {
   async logout(): Promise<void> {
     try {
       await fetchCsrfCookie()
-      await httpPost("/api/auth/logout", {}, { withCredentials: true })
+      const xsrf = readXsrfFromCookie()
+      await httpPost(
+        "/api/auth/logout",
+        {},
+        {
+          withCredentials: true,
+          headers: xsrf
+            ? {
+                "X-Requested-With": "XMLHttpRequest",
+                "X-XSRF-TOKEN": xsrf,
+                Accept: "application/json",
+              }
+            : {
+                "X-Requested-With": "XMLHttpRequest",
+                Accept: "application/json",
+              },
+        },
+      )
     } catch {
       // ignore logout errors
     }
@@ -67,6 +134,9 @@ export const authService = {
 // Deprecated token storage, kept as no-op to avoid breaking imports.
 export const tokenStorage = {
   set: (_token: string) => {},
+  get: () => null,
+  remove: () => {},
+},
   get: () => null,
   remove: () => {},
 }
