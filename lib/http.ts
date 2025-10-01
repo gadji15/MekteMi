@@ -50,6 +50,7 @@ const client = axios.create({
   xsrfHeaderName: "X-XSRF-TOKEN",
   headers: {
     "Content-Type": "application/json",
+    "X-Requested-With": "XMLHttpRequest",
   },
 })
 
