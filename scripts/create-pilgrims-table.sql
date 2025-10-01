@@ -1,18 +1,21 @@
--- SQL script to create the points_of_interest table in Laravel/MySQL database
--- This script can be used as guidance for a migration
+-- SQL script to create the pilgrims table in a MySQL-compatible database
+-- Prefer using Laravel migrations (see database/migrations), this file is only a guide.
 
-CREATE TABLE IF NOT EXISTS points_of_interest (
+CREATE TABLE IF NOT EXISTS pilgrims (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(200) NOT NULL,
-    description TEXT NULL,
-    address VARCHAR(255) NULL,
-    latitude DECIMAL(10,7) NULL,
-    longitude DECIMAL(10,7) NULL,
-    category ENUM('mosque','accommodation','food','transport','medical','other') NOT NULL DEFAULT 'other',
-    is_open TINYINT(1) NOT NULL DEFAULT 0,
-    opening_hours VARCHAR(100) NULL,
-    phone VARCHAR(50) NULL,
+    first_name VARCHAR(255) NOT NULL,
+    last_name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    phone VARCHAR(50) NOT NULL,
+    city VARCHAR(255) NOT NULL,
+    country VARCHAR(100) NOT NULL,
+    accommodation_type VARCHAR(100) NULL,
+    special_needs TEXT NULL,
+    status ENUM('pending','confirmed','cancelled') NOT NULL DEFAULT 'pending',
+    registration_date TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
     created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_category (category)
+    INDEX idx_status (status),
+    INDEX idx_country (country),
+    INDEX idx_registration_date (registration_date)
 );

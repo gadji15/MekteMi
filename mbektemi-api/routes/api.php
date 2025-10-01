@@ -47,6 +47,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/notifications/{id}',      [NotificationController::class, 'update']);
     Route::delete('/notifications/{id}',   [NotificationController::class, 'destroy']);
 
+    /* --------------------------- Schedules (CRUD) ----------------------- */
+    Route::post('/schedules',         [ScheduleController::class, 'store']);
+    Route::put('/schedules/{id}',     [ScheduleController::class, 'update']);
+    Route::delete('/schedules/{id}',  [ScheduleController::class, 'destroy']);
+
     /* ------------------------ Points of Interest ------------------------ */
     Route::post('/points-of-interest',          [PointOfInterestController::class, 'store']);
     Route::put('/points-of-interest/{id}',      [PointOfInterestController::class, 'update']);

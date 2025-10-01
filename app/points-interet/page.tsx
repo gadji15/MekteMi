@@ -4,7 +4,6 @@ import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { MapPin, Clock, Phone, Utensils, Bed, Car, Heart, Building } from "lucide-react"
-import { Navigation } from "@/components/navigation"
 import { apiService } from "@/lib/api"
 
 type Poi = {
@@ -97,7 +96,7 @@ export default function PointsInteretPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
-      <Navigation />
+      
 
       <main className="max-w-4xl mx-auto px-4 py-8">
         <div className="text-center mb-8">

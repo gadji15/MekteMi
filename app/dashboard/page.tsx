@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/contexts/auth-context"
-import { Navigation } from "@/components/navigation"
 import { User, Calendar, Bell, MapPin, LogOut, Settings } from "lucide-react"
 
 export default function DashboardPage() {
@@ -65,7 +64,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
-      <Navigation />
+      
 
       <main className="max-w-4xl mx-auto px-4 py-8">
         {/* Welcome Section */}

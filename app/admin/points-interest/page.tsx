@@ -11,6 +11,7 @@ import { MapPin, Plus, Save, Trash2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import type { PointOfInterest } from "@/lib/types"
+import { z } from "zod"
 
 type Poi = PointOfInterest
 
@@ -22,6 +23,28 @@ const categories = [
   { value: "medical", label: "Médical" },
   { value: "other", label: "Autre" },
 ] as const
+
+const poiSchema = z.object({
+  name: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
+  category: z.enum(["mosque", "accommodation", "food", "transport", "medical", "other"], {
+    errorMap: () => ({ message: "Catégorie invalide" }),
+  }),
+  description: z.string().optional(),
+  address: z.string().optional(),
+  latitude: z
+    .number({ invalid_type_error: "Latitude doit être un nombre" })
+    .min(-90, "Latitude invalide")
+    .max(90, "Latitude invalide")
+    .optional(),
+  longitude: z
+    .number({ invalid_type_error: "Longitude doit être un nombre" })
+    .min(-180, "Longitude invalide")
+    .max(180, "Longitude invalide")
+    .optional(),
+  openingHours: z.string().optional(),
+  phone: z.string().optional(),
+  isOpen: z.boolean().optional(),
+})
 
 export default function AdminPointsInterestPage() {
   const [items, setItems] = useState<Poi[]>([])
@@ -35,7 +58,11 @@ export default function AdminPointsInterestPage() {
       setLoading(true)
       const res = await apiService.getPointsOfInterest()
       setItems(res.data || [])
-    } catch (e) {
+    } catch (e: any) {
+      if (e?.status === 401) {
+        router.push("/auth/login")
+        return
+      }
       setError(e instanceof Error ? e.message : "Erreur de chargement")
     } finally {
       setLoading(false)
@@ -62,15 +89,31 @@ export default function AdminPointsInterestPage() {
       await apiService.deletePointOfInterest(id)
       toast.success("Point d'intérêt supprimé")
       await fetchAll()
-    } catch (e) {
+    } catch (e: any) {
+      if (e?.status === 401) {
+        router.push("/auth/login")
+        return
+      }
       toast.error(e instanceof Error ? e.message : "Suppression impossible")
     }
   }
 
   const onSave = async () => {
     if (!editing) return
-    if (!editing.name.trim()) {
-      toast.error("Le nom est requis")
+    const parsed = poiSchema.safeParse({
+      name: editing.name,
+      category: editing.category,
+      description: editing.description,
+      address: editing.address,
+      latitude: editing.latitude,
+      longitude: editing.longitude,
+      openingHours: editing.openingHours,
+      phone: editing.phone,
+      isOpen: !!editing.isOpen,
+    })
+    if (!parsed.success) {
+      const firstError = parsed.error.errors[0]?.message || "Veuillez vérifier le formulaire"
+      toast.error(firstError)
       return
     }
     const payload = {
@@ -94,7 +137,11 @@ export default function AdminPointsInterestPage() {
       }
       setEditing(null)
       await fetchAll()
-    } catch (e) {
+    } catch (e: any) {
+      if (e?.status === 401) {
+        router.push("/auth/login")
+        return
+      }
       toast.error(e instanceof Error ? e.message : "Enregistrement impossible")
     }
   }

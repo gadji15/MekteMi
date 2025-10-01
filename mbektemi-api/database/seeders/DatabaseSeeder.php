@@ -4,6 +4,8 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use App\Models\PointOfInterest;
+use App\Models\Notification;
+use App\Models\Schedule;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -73,6 +75,70 @@ class DatabaseSeeder extends Seeder
             PointOfInterest::query()->updateOrCreate(
                 ['name' => $poi['name']],
                 $poi
+            );
+        }
+
+        // Seed notifications (idempotent)
+        $notifications = [
+            [
+                'title' => 'Ouverture officielle du Magal',
+                'message' => "La cérémonie d'ouverture aura lieu demain à 08:30 au Mausolée de Cheikh Ahmadou Bamba.",
+                'type' => 'info',
+            ],
+            [
+                'title' => 'Alerte météo',
+                'message' => "Risque d'averses dans l'après-midi. Merci de prévoir des protections appropriées.",
+                'type' => 'warning',
+            ],
+            [
+                'title' => 'Annonce importante',
+                'message' => "Changement d'horaire pour la prière collective du matin: 05:15 au lieu de 05:30.",
+                'type' => 'urgent',
+            ],
+        ];
+
+        foreach ($notifications as $n) {
+            Notification::query()->updateOrCreate(
+                ['title' => $n['title']],
+                $n
+            );
+        }
+
+        // Seed schedules with dates (idempotent)
+        $schedules = [
+            [
+                'title' => "Prière collective du matin",
+                'description' => "Grande prière collective rassemblant tous les pèlerins",
+                'date' => '2025-02-17',
+                'start_time' => '05:30',
+                'end_time' => '07:00',
+                'location' => "Grande Mosquée de Touba",
+                'type' => 'prayer',
+            ],
+            [
+                'title' => "Cérémonie d'ouverture officielle",
+                'description' => "Ouverture officielle du Magal de Touba avec les autorités religieuses",
+                'date' => '2025-02-16',
+                'start_time' => '08:30',
+                'end_time' => '11:00',
+                'location' => "Mausolée de Cheikh Ahmadou Bamba",
+                'type' => 'ceremony',
+            ],
+            [
+                'title' => "Récitation du Coran",
+                'description' => "Récitation collective du Saint Coran par les érudits",
+                'date' => '2025-02-17',
+                'start_time' => '09:00',
+                'end_time' => '12:00',
+                'location' => "Grande Mosquée de Touba",
+                'type' => 'event',
+            ],
+        ];
+
+        foreach ($schedules as $s) {
+            Schedule::query()->updateOrCreate(
+                ['title' => $s['title']],
+                $s
             );
         }
     }

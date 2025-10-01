@@ -81,6 +81,36 @@ export const apiService = {
     const schedules = await httpGet<Schedule[]>("/api/schedules")
     return { data: schedules, success: true, message: "Horaires récupérés" }
   },
+  async createSchedule(data: Pick<Schedule, "title" | "description" | "startTime" | "endTime" | "location" | "type"> & { date?: string }) {
+    // Map camelCase to API snake_case keys
+    const payload = {
+      title: data.title,
+      description: data.description,
+      date: data.date,
+      start_time: data.startTime,
+      end_time: data.endTime,
+      location: data.location,
+      type: data.type,
+    }
+    const created = await httpPost<Schedule>("/api/schedules", payload, { withCredentials: true })
+    return { data: created, success: true, message: "Horaire créé" }
+  },
+  async updateSchedule(id: string, data: Partial<Pick<Schedule, "title" | "description" | "startTime" | "endTime" | "location" | "type">> & { date?: string }) {
+    const payload: Record<string, unknown> = {}
+    if (data.title !== undefined) payload.title = data.title
+    if (data.description !== undefined) payload.description = data.description
+    if (data.date !== undefined) payload.date = data.date
+    if (data.startTime !== undefined) payload.start_time = data.startTime
+    if (data.endTime !== undefined) payload.end_time = data.endTime
+    if (data.location !== undefined) payload.location = data.location
+    if (data.type !== undefined) payload.type = data.type
+    const updated = await httpPut<Schedule>(`/api/schedules/${id}`, payload, { withCredentials: true })
+    return { data: updated, success: true, message: "Horaire mis à jour" }
+  },
+  async deleteSchedule(id: string) {
+    await httpDelete(`/api/schedules/${id}`, { withCredentials: true })
+    return { data: null, success: true, message: "Horaire supprimé" }
+  },
 
   // Notifications
   async getNotifications(): Promise<ApiResponse<Notification[]>> {
