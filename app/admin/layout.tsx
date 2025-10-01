@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { AdminSidebar } from "@/components/admin-sidebar"
 import { Loader2 } from "lucide-react"
+import { fetchCsrfCookie } from "@/lib/http"
 
 export default function AdminLayout({
   children,
@@ -21,6 +22,14 @@ export default function AdminLayout({
       router.push("/auth/login")
     }
   }, [user, isLoading, router])
+
+  useEffect(() => {
+    // Préparer le cookie CSRF pour les actions protégées (création/modification/suppression)
+    // afin d'éviter un 401/419 sur la première action.
+    if (!isLoading && user && user.role === "admin") {
+      void fetchCsrfCookie()
+    }
+  }, [isLoading, user])
 
   if (isLoading) {
     return (
@@ -41,6 +50,9 @@ export default function AdminLayout({
     <div className="min-h-screen bg-background flex">
       <AdminSidebar />
       <main className="flex-1 overflow-auto">{children}</main>
+    </div>
+  )
+}</main>
     </div>
   )
 }
