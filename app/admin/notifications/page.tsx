@@ -557,24 +557,3 @@ export default function AdminNotificationsPage() {
     </div>
   )
 }
-            className="cursor-pointer"
-          >
-            Suivant
-          </Button>
-        </div>
-      </div>
-
-      {items.length === 0 && (
-        <Card className="text-center py-12 bg-gradient-to-br from-card to-muted/30 border-0">
-          <CardContent>
-            <div className="animate-float mb-6">
-              <Bell className="w-12 h-12 text-muted-foreground mx-auto" />
-            </div>
-            <CardTitle className="text-xl mb-2">Aucune notification</CardTitle>
-            <CardDescription>Créez votre première notification pour communiquer avec les pèlerins.</CardDescription>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  )
-}
