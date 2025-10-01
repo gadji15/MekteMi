@@ -170,14 +170,3 @@ export default function NotificationsPage() {
     </div>
   )
 }
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </main>
-    </div>
-  )
-}

@@ -1,6 +1,6 @@
 // API utilities for Laravel backend integration
 
-import { httpDelete, httpGet, httpPatch, httpPost, httpPut } from "@/lib/http"
+import { fetchCsrfCookie, httpDelete, httpGet, httpPatch, httpPost, httpPut } from "@/lib/http"
 import type { Notification, Schedule, PointOfInterest, User } from "@/lib/types"
 
 export interface PilgrimRegistration {
@@ -28,6 +28,7 @@ export const apiService = {
   async registerPilgrim(
     data: Omit<PilgrimRegistration, "id" | "status" | "registrationDate">,
   ): Promise<ApiResponse<PilgrimRegistration>> {
+    // public endpoint
     const created = await httpPost<PilgrimRegistration>("/api/pilgrims", data)
     return {
       data: created,
@@ -37,6 +38,7 @@ export const apiService = {
   },
 
   async getPilgrimRegistrations(): Promise<ApiResponse<PilgrimRegistration[]>> {
+    await fetchCsrfCookie()
     const items = await httpGet<PilgrimRegistration[]>("/api/pilgrims", { withCredentials: true })
     return {
       data: items,
@@ -49,6 +51,7 @@ export const apiService = {
     id: string,
     status: PilgrimRegistration["status"],
   ): Promise<ApiResponse<PilgrimRegistration>> {
+    await fetchCsrfCookie()
     const updated = await httpPatch<PilgrimRegistration>(`/api/pilgrims/${id}`, { status }, { withCredentials: true })
     return {
       data: updated,
@@ -58,20 +61,24 @@ export const apiService = {
   },
 
   async deletePilgrim(id: string): Promise<ApiResponse<null>> {
+    await fetchCsrfCookie()
     await httpDelete<unknown>(`/api/pilgrims/${id}`, { withCredentials: true })
     return { data: null, success: true, message: "Pèlerin supprimé" }
   },
 
   // Users (admin)
   async getUsers(): Promise<ApiResponse<User[]>> {
+    await fetchCsrfCookie()
     const items = await httpGet<User[]>("/api/users", { withCredentials: true })
     return { data: items, success: true, message: "Utilisateurs récupérés" }
   },
   async updateUser(id: string, data: Partial<Pick<User, "role">> & { status?: "active" | "inactive" | "suspended"; name?: string }) {
+    await fetchCsrfCookie()
     const updated = await httpPatch<User>(`/api/users/${id}`, data, { withCredentials: true })
     return { data: updated, success: true, message: "Utilisateur mis à jour" }
   },
   async deleteUser(id: string) {
+    await fetchCsrfCookie()
     await httpDelete(`/api/users/${id}`, { withCredentials: true })
     return { data: null, success: true, message: "Utilisateur supprimé" }
   },
@@ -82,6 +89,7 @@ export const apiService = {
     return { data: schedules, success: true, message: "Horaires récupérés" }
   },
   async createSchedule(data: Pick<Schedule, "title" | "description" | "startTime" | "endTime" | "location" | "type"> & { date?: string }) {
+    await fetchCsrfCookie()
     // Map camelCase to API snake_case keys
     const payload = {
       title: data.title,
@@ -96,6 +104,7 @@ export const apiService = {
     return { data: created, success: true, message: "Horaire créé" }
   },
   async updateSchedule(id: string, data: Partial<Pick<Schedule, "title" | "description" | "startTime" | "endTime" | "location" | "type">> & { date?: string }) {
+    await fetchCsrfCookie()
     const payload: Record<string, unknown> = {}
     if (data.title !== undefined) payload.title = data.title
     if (data.description !== undefined) payload.description = data.description
@@ -108,6 +117,7 @@ export const apiService = {
     return { data: updated, success: true, message: "Horaire mis à jour" }
   },
   async deleteSchedule(id: string) {
+    await fetchCsrfCookie()
     await httpDelete(`/api/schedules/${id}`, { withCredentials: true })
     return { data: null, success: true, message: "Horaire supprimé" }
   },
@@ -119,16 +129,19 @@ export const apiService = {
   },
 
   async sendNotification(data: Pick<Notification, "title" | "message" | "type">): Promise<ApiResponse<Notification>> {
+    await fetchCsrfCookie()
     const created = await httpPost<Notification>("/api/notifications", data, { withCredentials: true })
     return { data: created, success: true, message: "Notification envoyée" }
   },
 
   async updateNotification(id: string, data: Partial<Notification>) {
+    await fetchCsrfCookie()
     const updated = await httpPut<Notification>(`/api/notifications/${id}`, data, { withCredentials: true })
     return { data: updated, success: true, message: "Notification mise à jour" }
   },
 
   async deleteNotification(id: string) {
+    await fetchCsrfCookie()
     await httpDelete(`/api/notifications/${id}`, { withCredentials: true })
     return { data: null, success: true, message: "Notification supprimée" }
   },
@@ -139,15 +152,21 @@ export const apiService = {
     return { data: items, success: true, message: "Points d'intérêt récupérés" }
   },
   async createPointOfInterest(data: Omit<PointOfInterest, "id">) {
+    await fetchCsrfCookie()
     const created = await httpPost<PointOfInterest>("/api/points-of-interest", data, { withCredentials: true })
     return { data: created, success: true, message: "Point d'intérêt créé" }
   },
   async updatePointOfInterest(id: string, data: Partial<PointOfInterest>) {
+    await fetchCsrfCookie()
     const updated = await httpPut<PointOfInterest>(`/api/points-of-interest/${id}`, data, { withCredentials: true })
     return { data: updated, success: true, message: "Point d'intérêt mis à jour" }
   },
   async deletePointOfInterest(id: string) {
+    await fetchCsrfCookie()
     await httpDelete(`/api/points-of-interest/${id}`, { withCredentials: true })
+    return { data: null, success: true, message: "Point d'intérêt supprimé" }
+  },
+}`, { withCredentials: true })
     return { data: null, success: true, message: "Point d'intérêt supprimé" }
   },
 }

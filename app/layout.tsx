@@ -88,12 +88,4 @@ export default function RootLayout({
       </body>
     </html>
   )
-}</LayoutWrapper>
-          </AuthProvider>
-        </Suspense>
-        <PWARegister />
-        <Analytics />
-      </body>
-    </html>
-  )
 }
