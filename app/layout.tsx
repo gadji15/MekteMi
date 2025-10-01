@@ -8,8 +8,6 @@ import LayoutWrapper from "@/components/layout-wrapper"
 import "./globals.css"
 import { Suspense } from "react"
 import PWARegister from "@/components/pwa-register"
-import { QueryClientProvider } from "@tanstack/react-query"
-import { queryClient } from "@/lib/query"
 
 export const metadata: Metadata = {
   title: "MbekteMi - Application Communautaire",
@@ -76,18 +74,8 @@ export default function RootLayout({
       </head>
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable} antialiased`}>
         <Suspense fallback={<div>Loading...</div>}>
-          <QueryClientProvider client={queryClient}>
-            <AuthProvider>
-              <LayoutWrapper>{children}</LayoutWrapper>
-            </AuthProvider>
-          </QueryClientProvider>
-        </Suspense>
-        <PWARegister />
-        <Analytics />
-      </body>
-    </html>
-  )
-}</LayoutWrapper>
+          <AuthProvider>
+            <LayoutWrapper>{children}</LayoutWrapper>
           </AuthProvider>
         </Suspense>
         <PWARegister />

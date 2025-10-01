@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Clock, MapPin, Calendar, Sun } from "lucide-react"
@@ -8,7 +8,6 @@ import { PrayerIcon, MosqueIcon } from "@/components/custom-icons"
 import { HeroSection } from "@/components/hero-section"
 import { apiService } from "@/lib/api"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useQuery } from "@tanstack/react-query"
 
 type ScheduleItem = {
   id: string
@@ -73,16 +72,30 @@ const formatDate = (date?: string) => {
 }
 
 export default function HorairesPage() {
+  const [items, setItems] = useState<ScheduleItem[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string>("")
   const [selectedType, setSelectedType] = useState<string>("all")
   const [selectedDate, setSelectedDate] = useState<string>("all")
 
-  const { data: items = [], isLoading, error } = useQuery({
-    queryKey: ["schedules"],
-    queryFn: async () => {
-      const res = await apiService.getSchedules()
-      return res.data || []
-    },
-  })
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      try {
+        const res = await apiService.getSchedules()
+        if (!mounted) return
+        setItems(res.data || [])
+      } catch (e) {
+        if (!mounted) return
+        setError(e instanceof Error ? e.message : "Impossible de charger les horaires")
+      } finally {
+        if (mounted) setIsLoading(false)
+      }
+    })()
+    return () => {
+      mounted = false
+    }
+  }, [])
 
   // Compute filters
   const dates = useMemo(() => {
@@ -176,7 +189,7 @@ export default function HorairesPage() {
         ) : error ? (
           <Card className="border-0 bg-gradient-to-br from-card to-muted/30">
             <CardContent className="p-6">
-              <p className="text-destructive font-medium">{(error as Error).message}</p>
+              <p className="text-destructive font-medium">{error}</p>
             </CardContent>
           </Card>
         ) : filtered.length === 0 ? (
@@ -255,7 +268,7 @@ export default function HorairesPage() {
         <Card className="mt-12 bg-gradient-to-r from-primary/5 via-secondary/5 to-primary/5 border-primary/20">
           <CardHeader>
             <CardTitle className="flex items-center gap-3 text-xl">
-              <div className="w-12 h-12 bg-gradient-to-br from-primary to secondary rounded-xl flex items-center justify-center">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center">
                 <Clock className="w-6 h-6 text-white" />
               </div>
               Note importante
