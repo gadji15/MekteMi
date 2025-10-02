@@ -8,6 +8,8 @@ import LayoutWrapper from "@/components/layout-wrapper"
 import "./globals.css"
 import { Suspense } from "react"
 import PWARegister from "@/components/pwa-register"
+import QueryProvider from "@/components/query-provider"
+import { NotificationsProvider } from "@/contexts/notifications-context"
 
 export const metadata: Metadata = {
   title: "MbekteMi - Application Communautaire",
@@ -73,11 +75,15 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
       </head>
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable} antialiased`}>
-        <Suspense fallback={<div>Loading...</div>}>
-          <AuthProvider>
-            <LayoutWrapper>{children}</LayoutWrapper>
-          </AuthProvider>
-        </Suspense>
+        <QueryProvider>
+          <Suspense fallback={<div>Loading...</div>}>
+            <AuthProvider>
+              <NotificationsProvider>
+                <LayoutWrapper>{children}</LayoutWrapper>
+              </NotificationsProvider>
+            </AuthProvider>
+          </Suspense>
+        </QueryProvider>
         <PWARegister />
         <Analytics />
       </body>
