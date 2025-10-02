@@ -21,10 +21,10 @@ interface NotificationsContextValue {
   error: string | null
   unreadCount: number
   refresh: () => Promise<void>
+  markAllAsRead: () => void
   create: (data: { title: string; message: string; type: NotificationType }) => Promise<void>
   update: (id: string, data: Partial<{ title: string; message: string; type: NotificationType }>) => Promise<void>
   remove: (id: string) => Promise<void>
-  markAllAsRead: () => void
 }
 
 const NotificationsContext = createContext<NotificationsContextValue | undefined>(undefined)
@@ -36,7 +36,7 @@ function normalize(n: any): NotificationItem {
     message: n.message,
     type: (n.type as NotificationType) || "info",
     createdAt: new Date(n.createdAt ?? n.created_at ?? Date.now()).toISOString(),
-    isRead: Boolean(n.isRead),
+    isRead: Boolean(n.isRead ?? n.is_read ?? false),
   }
 }
 
@@ -59,6 +59,10 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     }
   }
 
+  const markAllAsRead = () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })))
+  }
+
   const create = async (data: { title: string; message: string; type: NotificationType }) => {
     await apiService.sendNotification(data)
     await refresh()
@@ -77,10 +81,6 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     await refresh()
   }
 
-  const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })))
-  }
-
   useEffect(() => {
     // initial load (public notifications)
     refresh().catch(() => {})
@@ -89,7 +89,20 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
   const unreadCount = useMemo(() => notifications.filter((n) => !n.isRead).length, [notifications])
 
   const value = useMemo<NotificationsContextValue>(
-    () => ({ notifications, isLoading, error, unreadCount, refresh, create, update, remove, markAllAsRead }),
+    () => ({ notifications, isLoading, error, unreadCount, refresh, markAllAsRead, create, update, remove }),
+    [notifications, isLoading, error, unreadCount],
+  )
+
+  return <NotificationsContext.Provider value={value}>{children}</NotificationsContext.Provider>
+}
+
+export function useNotifications() {
+  const ctx = useContext(NotificationsContext)
+  if (!ctx) {
+    throw new Error("useNotifications must be used within a NotificationsProvider")
+  }
+  return ctx
+}),
     [notifications, isLoading, error, unreadCount],
   )
 
