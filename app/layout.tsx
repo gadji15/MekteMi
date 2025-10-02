@@ -6,8 +6,10 @@ import { Analytics } from "@vercel/analytics/next"
 import { AuthProvider } from "@/contexts/auth-context"
 import LayoutWrapper from "@/components/layout-wrapper"
 import "./globals.css"
-import { Suspense } from "react"
+import { Suspense, useState } from "react"
 import PWARegister from "@/components/pwa-register"
+import { QueryClientProvider } from "@tanstack/react-query"
+import { createQueryClient } from "@/lib/react-query"
 
 export const metadata: Metadata = {
   title: "MbekteMi - Application Communautaire",
@@ -62,6 +64,9 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  // Create a single QueryClient for the app lifetime
+  const [queryClient] = useState(() => createQueryClient())
+
   return (
     <html lang="fr">
       <head>
@@ -73,9 +78,19 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
       </head>
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable} antialiased`}>
-        <Suspense fallback={<div>Loading...</div>}>
-          <AuthProvider>
-            <LayoutWrapper>{children}</LayoutWrapper>
+        <QueryClientProvider client={queryClient}>
+          <Suspense fallback={<div>Loading...</div>}>
+            <AuthProvider>
+              <LayoutWrapper>{children}</LayoutWrapper>
+            </AuthProvider>
+          </Suspense>
+        </QueryClientProvider>
+        <PWARegister />
+        <Analytics />
+      </body>
+    </html>
+  )
+}</LayoutWrapper>
           </AuthProvider>
         </Suspense>
         <PWARegister />
