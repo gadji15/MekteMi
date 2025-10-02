@@ -337,12 +337,4 @@ export default function AdminDashboard() {
       )}
     </div>
   )
-} nouveaux messages non lus</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  )
-}
+} 
