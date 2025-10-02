@@ -119,6 +119,19 @@ Checklist Sanctum locale (après avoir ouvert http://localhost:3000):
 ---
 # ✅ Mise à jour GitHub (push sans blocage)
 
+Pipeline de push recommandé (récap)
+
+À chaque session:
+pnpm lint
+pnpm type-check
+pnpm build
+git fetch origin
+git rebase origin/main # si vous devez vous synchroniser
+git status
+git add .
+git commit -m "feat/fix: message clair"
+git push
+
 Procédure fiable pour pousser vos changements sur GitHub depuis WSL, avec vérifications pour éviter les erreurs (Husky, lint, rebase).
 
 1) Préparer l’environnement Git (une fois)
