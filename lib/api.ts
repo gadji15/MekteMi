@@ -23,7 +23,22 @@ export interface ApiResponse<T> {
   success: boolean
 }
 
+export interface AdminMetrics {
+  pilgrims: { total: number; confirmed: number; pending: number; cancelled: number }
+  events: { total: number; active: number }
+  notifications: { total: number }
+  users: { total: number; active: number; inactive: number; suspended: number }
+  generatedAt: string
+}
+
 export const apiService = {
+  // Admin Metrics
+  async getAdminMetrics(): Promise<ApiResponse<AdminMetrics>> {
+    await fetchCsrfCookie()
+    const data = await httpGet<AdminMetrics>("/api/admin/metrics", { withCredentials: true })
+    return { data, success: true, message: "Métriques récupérées" }
+  },
+
   // Pilgrim registration endpoints (Laravel)
   async registerPilgrim(
     data: Omit<PilgrimRegistration, "id" | "status" | "registrationDate">,
@@ -171,6 +186,9 @@ export const apiService = {
   async deletePointOfInterest(id: string) {
     await fetchCsrfCookie()
     await httpDelete(`/api/points-of-interest/${id}`, { withCredentials: true })
+    return { data: null, success: true, message: "Point d'intérêt supprimé" }
+  },
+}`, { withCredentials: true })
     return { data: null, success: true, message: "Point d'intérêt supprimé" }
   }
 }
