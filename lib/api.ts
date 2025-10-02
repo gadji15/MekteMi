@@ -87,17 +87,25 @@ export const apiService = {
     const schedules = await httpGet<Schedule[]>("/api/schedules")
     return { data: schedules, success: true, message: "Horaires récupérés" }
   },
-  async createSchedule(data: Pick<Schedule, "title" | "description" | "startTime" | "endTime" | "location" | "type"> & { date?: string }) {
+  async createSchedule(data: {
+    title: string
+    description?: string
+    date?: string
+    startTime?: string | Date
+    endTime?: string | Date
+    location?: string
+    type?: Schedule["type"]
+  }) {
     // Map camelCase to API snake_case keys
-    const payload = {
+    const payload: Record<string, unknown> = {
       title: data.title,
-      description: data.description,
-      date: data.date,
-      start_time: data.startTime,
-      end_time: data.endTime,
-      location: data.location,
-      type: data.type,
     }
+    if (data.description !== undefined) payload.description = data.description
+    if (data.date !== undefined) payload.date = data.date
+    if (data.startTime !== undefined) payload.start_time = data.startTime
+    if (data.endTime !== undefined) payload.end_time = data.endTime
+    if (data.location !== undefined) payload.location = data.location
+    if (data.type !== undefined) payload.type = data.type
     await fetchCsrfCookie()
     const created = await httpPost<Schedule>("/api/schedules", payload, { withCredentials: true })
     return { data: created, success: true, message: "Horaire créé" }
@@ -164,5 +172,5 @@ export const apiService = {
     await fetchCsrfCookie()
     await httpDelete(`/api/points-of-interest/${id}`, { withCredentials: true })
     return { data: null, success: true, message: "Point d'intérêt supprimé" }
-  },
+  }
 }

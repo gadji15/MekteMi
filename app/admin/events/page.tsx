@@ -213,8 +213,9 @@ export default function AdminEventsPage() {
           title: form.title.trim(),
           description: form.description.trim(),
           date: form.date || undefined,
-          startTime: form.startTime || undefined,
-          endTime: form.endTime || undefined,
+          // startTime/endTime attendent string | Date (non undefined)
+          startTime: form.startTime || "",
+          endTime: form.endTime || "",
           location: form.location || undefined,
           type: form.type,
         })
@@ -223,8 +224,8 @@ export default function AdminEventsPage() {
           title: form.title.trim(),
           description: form.description.trim(),
           date: form.date || undefined,
-          startTime: form.startTime || undefined,
-          endTime: form.endTime || undefined,
+          startTime: form.startTime || "",
+          endTime: form.endTime || "",
           location: form.location || undefined,
           type: form.type,
         })

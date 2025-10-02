@@ -12,13 +12,16 @@ export interface NotificationItem {
   message: string
   type: NotificationType
   createdAt: string
+  isRead?: boolean
 }
 
 interface NotificationsContextValue {
   notifications: NotificationItem[]
   isLoading: boolean
   error: string | null
+  unreadCount: number
   refresh: () => Promise<void>
+  markAllAsRead: () => void
   create: (data: { title: string; message: string; type: NotificationType }) => Promise<void>
   update: (id: string, data: Partial<{ title: string; message: string; type: NotificationType }>) => Promise<void>
   remove: (id: string) => Promise<void>
@@ -33,6 +36,7 @@ function normalize(n: any): NotificationItem {
     message: n.message,
     type: (n.type as NotificationType) || "info",
     createdAt: new Date(n.createdAt ?? n.created_at ?? Date.now()).toISOString(),
+    isRead: Boolean(n.isRead ?? n.is_read ?? false),
   }
 }
 
@@ -53,6 +57,10 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const markAllAsRead = () => {
+    setNotifications((prev: NotificationItem[]) => prev.map((n) => ({ ...n, isRead: true })))
   }
 
   const create = async (data: { title: string; message: string; type: NotificationType }) => {
@@ -78,9 +86,11 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     refresh().catch(() => {})
   }, [])
 
+  const unreadCount = useMemo(() => notifications.filter((n: NotificationItem) => !n.isRead).length, [notifications])
+
   const value = useMemo<NotificationsContextValue>(
-    () => ({ notifications, isLoading, error, refresh, create, update, remove }),
-    [notifications, isLoading, error],
+    () => ({ notifications, isLoading, error, unreadCount, refresh, markAllAsRead, create, update, remove }),
+    [notifications, isLoading, error, unreadCount],
   )
 
   return <NotificationsContext.Provider value={value}>{children}</NotificationsContext.Provider>
@@ -91,5 +101,5 @@ export function useNotifications() {
   if (!ctx) {
     throw new Error("useNotifications must be used within a NotificationsProvider")
   }
-  return ctx
-}
+    return ctx
+  }
