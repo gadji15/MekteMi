@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {
@@ -28,41 +28,81 @@ import {
   Pie,
   Cell,
 } from "recharts"
+import { apiService, type AdminMetrics } from "@/lib/api"
+import { useAuth } from "@/contexts/auth-context"
+import { useRouter } from "next/navigation"
 
-// Mock data for charts
+// Basic chart placeholders (can be replaced by real time-series later)
 const registrationData = [
-  { name: "Jan", inscriptions: 120 },
-  { name: "Fév", inscriptions: 190 },
-  { name: "Mar", inscriptions: 300 },
-  { name: "Avr", inscriptions: 280 },
-  { name: "Mai", inscriptions: 450 },
-  { name: "Juin", inscriptions: 380 },
-]
-
-const statusData = [
-  { name: "Confirmés", value: 65, color: "#10b981" },
-  { name: "En attente", value: 25, color: "#f59e0b" },
-  { name: "Annulés", value: 10, color: "#ef4444" },
+  { name: "Jan", inscriptions: 0 },
+  { name: "Fév", inscriptions: 0 },
+  { name: "Mar", inscriptions: 0 },
+  { name: "Avr", inscriptions: 0 },
+  { name: "Mai", inscriptions: 0 },
+  { name: "Juin", inscriptions: 0 },
 ]
 
 export default function AdminDashboard() {
-  const [stats, _setStats] = useState({
-    totalPilgrims: 1247,
-    confirmedPilgrims: 810,
-    pendingPilgrims: 312,
-    cancelledPilgrims: 125,
-    totalEvents: 45,
-    activeEvents: 12,
-    totalNotifications: 89,
-    unreadMessages: 23,
-  })
+  const { user, isLoading: authLoading } = useAuth()
+  const router = useRouter()
+  const [metrics, setMetrics] = useState<AdminMetrics | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
 
-  const [recentActivity] = useState([
-    { id: 1, type: "registration", message: "Nouvelle inscription de Fatou Diop", time: "Il y a 5 min" },
-    { id: 2, type: "event", message: "Événement 'Prière du Fajr' mis à jour", time: "Il y a 15 min" },
-    { id: 3, type: "notification", message: "Notification envoyée à 500 utilisateurs", time: "Il y a 1h" },
-    { id: 4, type: "user", message: "Nouveau bénévole inscrit", time: "Il y a 2h" },
-  ])
+  useEffect(() => {
+    if (!authLoading && (!user || user.role !== "admin")) {
+      router.push("/auth/login")
+    }
+  }, [user, authLoading, router])
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true)
+        const res = await apiService.getAdminMetrics()
+        setMetrics(res.data)
+      } catch (e: any) {
+        if (e?.status === 401) {
+          router.push("/auth/login")
+          return
+        }
+        setError(e?.message || "Impossible de charger les métriques")
+      } finally {
+        setLoading(false)
+      }
+    }
+    if (user && user.role === "admin") {
+      load()
+    }
+  }, [user, router])
+
+  const statusData = useMemo(
+    () => [
+      { name: "Confirmés", value: metrics?.pilgrims.confirmed ?? 0, color: "#10b981" },
+      { name: "En attente", value: metrics?.pilgrims.pending ?? 0, color: "#f59e0b" },
+      { name: "Annulés", value: metrics?.pilgrims.cancelled ?? 0, color: "#ef4444" },
+    ],
+    [metrics],
+  )
+
+  if (authLoading || loading) {
+    return (
+      <div className="p-6">
+        <div className="animate-pulse space-y-6">
+          <div className="h-8 bg-muted rounded w-1/3"></div>
+          <div className="grid grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-24 bg-muted rounded"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!user || user.role !== "admin") {
+    return null
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -87,10 +127,10 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Total Pèlerins</p>
-                <p className="text-3xl font-bold">{stats.totalPilgrims.toLocaleString()}</p>
+                <p className="text-3xl font-bold">{metrics?.pilgrims.total.toLocaleString() ?? "0"}</p>
                 <p className="text-xs text-green-600 flex items-center mt-1">
                   <TrendingUp className="w-3 h-3 mr-1" />
-                  +12% ce mois
+                  Données en temps réel
                 </p>
               </div>
               <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
@@ -105,10 +145,13 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Confirmés</p>
-                <p className="text-3xl font-bold">{stats.confirmedPilgrims.toLocaleString()}</p>
+                <p className="text-3xl font-bold">{metrics?.pilgrims.confirmed.toLocaleString() ?? "0"}</p>
                 <p className="text-xs text-green-600 flex items-center mt-1">
                   <CheckCircle className="w-3 h-3 mr-1" />
-                  {Math.round((stats.confirmedPilgrims / stats.totalPilgrims) * 100)}% du total
+                  {metrics && metrics.pilgrims.total > 0
+                    ? Math.round((metrics.pilgrims.confirmed / metrics.pilgrims.total) * 100)
+                    : 0}
+                  % du total
                 </p>
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
@@ -123,7 +166,7 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">En attente</p>
-                <p className="text-3xl font-bold">{stats.pendingPilgrims.toLocaleString()}</p>
+                <p className="text-3xl font-bold">{metrics?.pilgrims.pending.toLocaleString() ?? "0"}</p>
                 <p className="text-xs text-yellow-600 flex items-center mt-1">
                   <Clock className="w-3 h-3 mr-1" />
                   Nécessite action
@@ -141,10 +184,10 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Événements actifs</p>
-                <p className="text-3xl font-bold">{stats.activeEvents}</p>
+                <p className="text-3xl font-bold">{metrics?.events.active ?? 0}</p>
                 <p className="text-xs text-blue-600 flex items-center mt-1">
                   <Calendar className="w-3 h-3 mr-1" />
-                  Sur {stats.totalEvents} total
+                  Sur {metrics?.events.total ?? 0} total
                 </p>
               </div>
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -160,7 +203,7 @@ export default function AdminDashboard() {
         <Card className="bg-gradient-to-br from-card to-muted/30 border-0 shadow-lg">
           <CardHeader>
             <CardTitle>Évolution des inscriptions</CardTitle>
-            <CardDescription>Nombre d'inscriptions par mois</CardDescription>
+            <CardDescription>Série temporelle (TODO: backend timeseries)</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -210,7 +253,7 @@ export default function AdminDashboard() {
                 <div key={index} className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
                   <span className="text-sm">
-                    {entry.name}: {entry.value}%
+                    {entry.name}: {entry.value}
                   </span>
                 </div>
               ))}
@@ -227,19 +270,17 @@ export default function AdminDashboard() {
               <Activity className="w-5 h-5" />
               Activité récente
             </CardTitle>
-            <CardDescription>Dernières actions sur la plateforme</CardDescription>
+            <CardDescription>(À relier au backend: dernière notification, dernier pèlerin, etc.)</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recentActivity.map((activity) => (
-                <div key={activity.id} className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
-                  <div className="w-2 h-2 bg-primary rounded-full mt-2" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">{activity.message}</p>
-                    <p className="text-xs text-muted-foreground">{activity.time}</p>
-                  </div>
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+                <div className="w-2 h-2 bg-primary rounded-full mt-2" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium">Dernières métriques mises à jour</p>
+                  <p className="text-xs text-muted-foreground">{metrics?.generatedAt}</p>
                 </div>
-              ))}
+              </div>
             </div>
             <Button variant="outline" className="w-full mt-4 cursor-pointer bg-transparent">
               Voir toute l'activité
@@ -277,17 +318,23 @@ export default function AdminDashboard() {
               <div className="flex items-center gap-2 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
                 <AlertCircle className="w-4 h-4 text-yellow-600" />
                 <span className="text-sm text-yellow-800">
-                  {stats.pendingPilgrims} inscriptions en attente de validation
+                  {(metrics?.pilgrims.pending ?? 0)} inscriptions en attente de validation
                 </span>
               </div>
               <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
                 <Bell className="w-4 h-4 text-blue-600" />
-                <span className="text-sm text-blue-800">{stats.unreadMessages} nouveaux messages non lus</span>
+                <span className="text-sm text-blue-800">
+                  {(metrics?.notifications.total ?? 0)} notifications au total
+                </span>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {error && (
+        <div className="p-3 bg-destructive/10 border border-destructive/30 text-destructive rounded">{error}</div>
+      )}
     </div>
   )
-}
+} 

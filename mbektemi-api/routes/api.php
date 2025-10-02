@@ -6,6 +6,7 @@ use App\Http\Controllers\PilgrimController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PointOfInterestController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\AdminMetricsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -59,4 +60,7 @@ Route::middleware(['web', 'auth:sanctum'])->group(function () {
     Route::post('/points-of-interest',          [PointOfInterestController::class, 'store']);
     Route::put('/points-of-interest/{id}',      [PointOfInterestController::class, 'update']);
     Route::delete('/points-of-interest/{id}',   [PointOfInterestController::class, 'destroy']);
+
+    /* ------------------------ Admin Metrics ----------------------------- */
+    Route::get('/admin/metrics', AdminMetricsController::class);
 });
