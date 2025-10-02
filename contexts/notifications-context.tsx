@@ -12,16 +12,19 @@ export interface NotificationItem {
   message: string
   type: NotificationType
   createdAt: string
+  isRead?: boolean
 }
 
 interface NotificationsContextValue {
   notifications: NotificationItem[]
   isLoading: boolean
   error: string | null
+  unreadCount: number
   refresh: () => Promise<void>
   create: (data: { title: string; message: string; type: NotificationType }) => Promise<void>
   update: (id: string, data: Partial<{ title: string; message: string; type: NotificationType }>) => Promise<void>
   remove: (id: string) => Promise<void>
+  markAllAsRead: () => void
 }
 
 const NotificationsContext = createContext<NotificationsContextValue | undefined>(undefined)
@@ -33,6 +36,7 @@ function normalize(n: any): NotificationItem {
     message: n.message,
     type: (n.type as NotificationType) || "info",
     createdAt: new Date(n.createdAt ?? n.created_at ?? Date.now()).toISOString(),
+    isRead: Boolean(n.isRead),
   }
 }
 
@@ -73,14 +77,20 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     await refresh()
   }
 
+  const markAllAsRead = () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })))
+  }
+
   useEffect(() => {
     // initial load (public notifications)
     refresh().catch(() => {})
   }, [])
 
+  const unreadCount = useMemo(() => notifications.filter((n) => !n.isRead).length, [notifications])
+
   const value = useMemo<NotificationsContextValue>(
-    () => ({ notifications, isLoading, error, refresh, create, update, remove }),
-    [notifications, isLoading, error],
+    () => ({ notifications, isLoading, error, unreadCount, refresh, create, update, remove, markAllAsRead }),
+    [notifications, isLoading, error, unreadCount],
   )
 
   return <NotificationsContext.Provider value={value}>{children}</NotificationsContext.Provider>
