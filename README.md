@@ -1,3 +1,67 @@
+# ✅ Mise à jour GitHub (push sans blocage)
+
+Procédure fiable pour pousser vos changements sur GitHub depuis WSL, avec vérifications pour éviter les erreurs (Husky, lint, rebase).
+
+1) Préparer l’environnement Git (une fois)
+```bash
+git config --global user.name "Votre Nom"
+git config --global user.email "votre.email@example.com"
+git config --global credential.helper store
+# SSH recommandé: assurez-vous que votre clé est chargée
+eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/id_rsa
+```
+
+2) Installer Node & pnpm dans WSL (pour que Husky puisse lancer les checks)
+```bash
+# Installez nvm si absent
+curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+source ~/.nvm/nvm.sh
+# Installez Node LTS et pnpm
+nvm install --lts
+npm install -g pnpm
+```
+
+3) Vérifier et préparer le push
+```bash
+# À la racine du projet
+pnpm install              # installe les deps (front)
+pnpm lint                 # lint
+pnpm type-check           # TypeScript
+pnpm build                # build local
+
+git status                # vérifier l'état
+git add .                 # indexer les changements
+git commit -m "feat/fix: votre message clair"
+```
+
+4) Se synchroniser avec la branche distante pour éviter les rejets
+```bash
+git fetch origin
+# si besoin, rebase sur main (résoudre les conflits si présents)
+git rebase origin/main
+# en cas de conflits: éditer → git add . → git rebase --continue
+```
+
+5) Push vers GitHub
+```bash
+git push
+# ou première fois / nouvelle branche:
+git checkout -b feat/ma-fonctionnalite
+git push -u origin feat/ma-fonctionnalite
+```
+
+Conseils anti-blocage
+- “cannot rebase: unstaged changes”: faites d'abord `git add .` ou `git stash -u`.
+- Husky “pnpm not found”: installez Node + pnpm comme ci-dessus.
+- Évitez de committer: `.env`, `.env.local`, `node_modules/`, `vendor/`, `.next/`, fichiers temporaires (ex: cookies).
+- CRLF/LF en WSL:
+```bash
+git config core.autocrlf input
+```
+
+---
+
 # 🕌 MbekteMi - Application Communautaire
 
 <div align="center">
