@@ -23,7 +23,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 22
           cache: "pnpm"
 
       - name: Setup pnpm
@@ -41,4 +41,7 @@ jobs:
         run: pnpm type-check
 
       - name: Build
+        env:
+          NEXT_PUBLIC_API_BASE_URL: "http://localhost"
+          NEXT_PUBLIC_API_TIMEOUT: "10000"
         run: pnpm build
