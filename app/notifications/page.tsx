@@ -4,7 +4,6 @@ import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Bell, AlertTriangle, Info, Clock, Sparkles } from "lucide-react"
-import { NotificationBellIcon } from "@/components/custom-icons"
 import { apiService } from "@/lib/api"
 
 type NotificationItem = {
@@ -96,20 +95,20 @@ export default function NotificationsPage() {
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
       <main className="max-w-6xl mx-auto px-4 py-12">
         <div className="text-center mb-12">
-          <div className="animate-float mb-6">
-            <NotificationBellIcon className="w-16 h-16 mx-auto text-primary mb-4" />
-          </div>
+          <Badge className="bg-primary/10 text-primary">PWA disponible</Badge>
           <h1 className="text-4xl md:text-5xl font-bold mb-6 text-gradient">Notifications</h1>
           <p className="text-muted-foreground text-xl leading-relaxed text-pretty max-w-3xl mx-auto">
-            Restez informé des dernières actualités et annonces importantes du Magal de Touba
+            Restez informé des dernières actualités et annonces importantes du Magal de Touba.
           </p>
           {unreadCount > 0 && (
             <div className="mt-6">
-              <Badge className="bg-gradient-to-r from-primary to-secondary text-white px-4 py-2 text-base animate-pulse-glow">
+              <Badge className="bg-gradient-to-r from-primary to-secondary text-white px-4 py-2 text-base">
                 <Sparkles className="w-4 h-4 mr-2" />
                 {unreadCount} nouvelle{unreadCount > 1 ? "s" : ""} notification{unreadCount > 1 ? "s" : ""}
               </Badge>
             </div>
+          )}
+        </div>
           )}
         </div>
 
