@@ -60,7 +60,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
   }
 
   const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })))
+    setNotifications((prev: NotificationItem[]) => prev.map((n) => ({ ...n, isRead: true })))
   }
 
   const create = async (data: { title: string; message: string; type: NotificationType }) => {
@@ -86,7 +86,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     refresh().catch(() => {})
   }, [])
 
-  const unreadCount = useMemo(() => notifications.filter((n) => !n.isRead).length, [notifications])
+  const unreadCount = useMemo(() => notifications.filter((n: NotificationItem) => !n.isRead).length, [notifications])
 
   const value = useMemo<NotificationsContextValue>(
     () => ({ notifications, isLoading, error, unreadCount, refresh, markAllAsRead, create, update, remove }),
@@ -101,18 +101,5 @@ export function useNotifications() {
   if (!ctx) {
     throw new Error("useNotifications must be used within a NotificationsProvider")
   }
-  return ctx
-}),
-    [notifications, isLoading, error, unreadCount],
-  )
-
-  return <NotificationsContext.Provider value={value}>{children}</NotificationsContext.Provider>
-}
-
-export function useNotifications() {
-  const ctx = useContext(NotificationsContext)
-  if (!ctx) {
-    throw new Error("useNotifications must be used within a NotificationsProvider")
+    return ctx
   }
-  return ctx
-}

@@ -172,8 +172,5 @@ export const apiService = {
     await fetchCsrfCookie()
     await httpDelete(`/api/points-of-interest/${id}`, { withCredentials: true })
     return { data: null, success: true, message: "Point d'intérêt supprimé" }
-  },
-}`, { withCredentials: true })
-    return { data: null, success: true, message: "Point d'intérêt supprimé" }
-  },
+  }
 }

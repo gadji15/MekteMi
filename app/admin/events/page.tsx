@@ -229,7 +229,6 @@ export default function AdminEventsPage() {
           location: form.location || undefined,
           type: form.type,
         })
-      })
       }
       setShowForm(false)
       setEditing(null)
