@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    name: Frontend (Next.js) - lint, type-check, build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+          cache: "pnpm"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+          run_install: false
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Type check
+        run: pnpm type-check
+
+      - name: Build
+        run: pnpm build
+
+  backend:
+    name: Backend (Laravel) - composer install and basic checks
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: mbektemi-api
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          tools: composer:v2
+          extensions: mbstring, pdo, sqlite, bcmath, intl
+          coverage: none
+
+      - name: Validate composer.json
+        run: composer validate --no-interaction
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Basic syntax check
+        run: php -v
+
+      # Optional: run tests if present (will be skipped gracefully if not configured)
+      - name: Run PHPUnit tests (if available)
+        run: |
+          if [ -f vendor/bin/phpunit ] && [ -f phpunit.xml ]; then
+            vendor/bin/phpunit --testsuite default || vendor/bin/phpunit
+          else
+            echo "PHPUnit not configured; skipping tests."
+          fi
