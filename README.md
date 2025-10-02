@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![MbekteMi Logo](public/icon.jpg)
+![MbekteMi Logo](public/icon-192.jpg)
 
 Application web (Next.js + Laravel) destinée à accompagner la communauté Mouride lors du Magal de Touba.
 
@@ -193,7 +193,7 @@ git config core.autocrlf input
 
 <div align="center">
 
-![MbekteMi Logo](public/icon.jpg)
+![MbekteMi Logo](public/icon-192.jpg)
 
 Application web (Next.js + Laravel) destinée à accompagner la communauté Mouride lors du Magal de Touba.
 
