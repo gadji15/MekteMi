@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -12,14 +12,11 @@ import { Navigation } from "@/components/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { apiService, type PilgrimRegistration } from "@/lib/api"
 import { Users, Search, Filter, CheckCircle, Clock, XCircle, Phone, Mail, MapPin, Loader2 } from "lucide-react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 export default function AdminPilgrimsPage() {
   const { user, isLoading: authLoading } = useAuth()
   const router = useRouter()
-  const [pilgrims, setPilgrims] = useState<PilgrimRegistration[]>([])
-  const [filteredPilgrims, setFilteredPilgrims] = useState<PilgrimRegistration[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState("")
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [countryFilter, setCountryFilter] = useState<string>("all")
@@ -30,16 +27,21 @@ export default function AdminPilgrimsPage() {
     }
   }, [user, authLoading, router])
 
-  useEffect(() => {
-    if (user && user.role === "admin") {
-      loadPilgrims()
-    }
-  }, [user])
+  const {
+    data: pilgrims = [],
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["pilgrims"],
+    queryFn: async () => {
+      const response = await apiService.getPilgrimRegistrations()
+      return response.data || []
+    },
+    enabled: !!user && user.role === "admin",
+  })
 
-  useEffect(() => {
-    // Filter pilgrims based on search and filters
+  const filteredPilgrims = useMemo(() => {
     let filtered = pilgrims
-
     if (searchTerm) {
       filtered = filtered.filter(
         (pilgrim) =>
@@ -49,46 +51,38 @@ export default function AdminPilgrimsPage() {
           pilgrim.city.toLowerCase().includes(searchTerm.toLowerCase()),
       )
     }
-
     if (statusFilter !== "all") {
       filtered = filtered.filter((pilgrim) => pilgrim.status === statusFilter)
     }
-
     if (countryFilter !== "all") {
       filtered = filtered.filter((pilgrim) => pilgrim.country === countryFilter)
     }
-
-    setFilteredPilgrims(filtered)
+    return filtered
   }, [pilgrims, searchTerm, statusFilter, countryFilter])
 
-  const loadPilgrims = async () => {
-    try {
-      setIsLoading(true)
-      const response = await apiService.getPilgrimRegistrations()
-      if (response.success) {
-        setPilgrims(response.data)
-      } else {
-        setError(response.message ?? "Une erreur est survenue")
+  const queryClient = useQueryClient()
+  const { mutate: mutateStatus, isPending: isMutating } = useMutation({
+    mutationFn: async ({ id, newStatus }: { id: string; newStatus: PilgrimRegistration["status"] }) => {
+      const res = await apiService.updatePilgrimStatus(id, newStatus)
+      return res.data
+    },
+    onMutate: async ({ id, newStatus }) => {
+      await queryClient.cancelQueries({ queryKey: ["pilgrims"] })
+      const prev = queryClient.getQueryData<PilgrimRegistration[]>(["pilgrims"]) || []
+      queryClient.setQueryData<PilgrimRegistration[]>(["pilgrims"], (old = []) =>
+        old.map((p) => (p.id === id ? { ...p, status: newStatus } : p)),
+      )
+      return { prev }
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev) {
+        queryClient.setQueryData(["pilgrims"], ctx.prev)
       }
-    } catch (err) {
-      setError("Erreur lors du chargement des inscriptions")
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const updatePilgrimStatus = async (id: string, newStatus: PilgrimRegistration["status"]) => {
-    try {
-      const response = await apiService.updatePilgrimStatus(id, newStatus)
-      if (response.success) {
-        setPilgrims((prev) => prev.map((pilgrim) => (pilgrim.id === id ? { ...pilgrim, status: newStatus } : pilgrim)))
-      } else {
-        setError(response.message ?? "Une erreur est survenue")
-      }
-    } catch (err) {
-      setError("Erreur lors de la mise à jour du statut")
-    }
-  }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["pilgrims"] })
+    },
+  })
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -184,7 +178,7 @@ export default function AdminPilgrimsPage() {
 
         {error && (
           <Alert className="mb-6 border-destructive/50 text-destructive">
-            <AlertDescription>{error}</AlertDescription>
+            <AlertDescription>{(error as Error).message}</AlertDescription>
           </Alert>
         )}
 
@@ -350,16 +344,18 @@ export default function AdminPilgrimsPage() {
                       <>
                         <Button
                           size="sm"
-                          onClick={() => updatePilgrimStatus(pilgrim.id!, "confirmed")}
+                          onClick={() => mutateStatus({ id: pilgrim.id!, newStatus: "confirmed" })}
                           className="bg-green-600 hover:bg-green-700 cursor-pointer"
+                          disabled={isMutating}
                         >
                           Confirmer
                         </Button>
                         <Button
                           size="sm"
                           variant="destructive"
-                          onClick={() => updatePilgrimStatus(pilgrim.id!, "cancelled")}
+                          onClick={() => mutateStatus({ id: pilgrim.id!, newStatus: "cancelled" })}
                           className="cursor-pointer"
+                          disabled={isMutating}
                         >
                           Refuser
                         </Button>
@@ -369,8 +365,9 @@ export default function AdminPilgrimsPage() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => updatePilgrimStatus(pilgrim.id!, "cancelled")}
+                        onClick={() => mutateStatus({ id: pilgrim.id!, newStatus: "cancelled" })}
                         className="cursor-pointer"
+                        disabled={isMutating}
                       >
                         Annuler
                       </Button>
@@ -378,8 +375,9 @@ export default function AdminPilgrimsPage() {
                     {pilgrim.status === "cancelled" && (
                       <Button
                         size="sm"
-                        onClick={() => updatePilgrimStatus(pilgrim.id!, "confirmed")}
+                        onClick={() => mutateStatus({ id: pilgrim.id!, newStatus: "confirmed" })}
                         className="cursor-pointer"
+                        disabled={isMutating}
                       >
                         Réactiver
                       </Button>

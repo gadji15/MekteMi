@@ -10,12 +10,15 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Bell, Send, Plus, Clock, Edit, Trash2, MoreHorizontal, X, AlertCircle } from "lucide-react"
+import { Bell, Send, Plus, Clock, Edit, Trash2, MoreHorizontal, X, AlertCircle, Bug } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { apiService } from "@/lib/api"
 import { toast } from "sonner"
 import { useAuth } from "@/contexts/auth-context"
 import { z } from "zod"
+import { config } from "@/lib/config"
+import { fetchCsrfCookie } from "@/lib/http"
+import { authService } from "@/lib/auth"
 
 type NotifType = "info" | "warning" | "urgent"
 
@@ -32,6 +35,11 @@ const formSchema = z.object({
   message: z.string().min(5, "Le message doit contenir au moins 5 caractères").max(500, "500 caractères maximum"),
   type: z.enum(["info", "warning", "urgent"]),
 })
+
+function hasXsrfCookie(): boolean {
+  if (typeof document === "undefined") return false
+  return document.cookie.split("; ").some((c) => c.startsWith("XSRF-TOKEN="))
+}
 
 export default function AdminNotificationsPage() {
   const { user, isLoading: authLoading } = useAuth()
@@ -51,6 +59,12 @@ export default function AdminNotificationsPage() {
 
   useEffect(() => {
     if (!authLoading && (!user || user.role !== "admin")) {
+      // Diagnostic log clair si on est redirigé faute d'admin
+      console.debug("[ADMIN] Access denied or session missing. Redirecting to /auth/login", {
+        hasUser: Boolean(user),
+        role: user?.role,
+      })
+      toast.error("Session non valide ou droits insuffisants. Veuillez vous reconnecter.")
       router.push("/auth/login")
     }
   }, [user, authLoading, router])
@@ -70,9 +84,15 @@ export default function AdminNotificationsPage() {
       setItems(normalized)
     } catch (e: any) {
       if (e?.status === 401) {
+        console.debug("[ADMIN] 401 on getNotifications(). Likely not authenticated.", {
+          apiBase: config.apiBaseUrl,
+          hasXsrfCookie: hasXsrfCookie(),
+        })
+        toast.error("Session expirée. Veuillez vous reconnecter.")
         router.push("/auth/login")
         return
       }
+      console.debug("[ADMIN] Error loading notifications", e)
       setError(e instanceof Error ? e.message : "Erreur de chargement")
     } finally {
       setLoading(false)
@@ -137,9 +157,16 @@ export default function AdminNotificationsPage() {
       await fetchAll()
     } catch (e: any) {
       if (e?.status === 401) {
+        console.debug("[ADMIN] 401 on save/update notification", {
+          apiBase: config.apiBaseUrl,
+          hasXsrfCookie: hasXsrfCookie(),
+          payload: { title: form.title, message: form.message, type: form.type },
+        })
+        toast.error("Session expirée. Veuillez vous reconnecter.")
         router.push("/auth/login")
         return
       }
+      console.debug("[ADMIN] Save failed", e)
       setError(e instanceof Error ? e.message : "Enregistrement impossible")
     } finally {
       setSubmitting(false)
@@ -154,9 +181,16 @@ export default function AdminNotificationsPage() {
       await fetchAll()
     } catch (e: any) {
       if (e?.status === 401) {
+        console.debug("[ADMIN] 401 on delete notification", {
+          apiBase: config.apiBaseUrl,
+          hasXsrfCookie: hasXsrfCookie(),
+          id,
+        })
+        toast.error("Session expirée. Veuillez vous reconnecter.")
         router.push("/auth/login")
         return
       }
+      console.debug("[ADMIN] Delete failed", e)
       toast.error(e instanceof Error ? e.message : "Suppression impossible")
     }
   }
@@ -170,6 +204,22 @@ export default function AdminNotificationsPage() {
     const size = Number(value)
     setPageSize(size)
     setPage(1)
+  }
+
+  // Debug helpers
+  const testCsrf = async () => {
+    await fetchCsrfCookie()
+    toast.success(`CSRF rafraîchi — XSRF=${hasXsrfCookie() ? "present" : "absent"}`)
+  }
+
+  const testSession = async () => {
+    const me = await authService.getCurrentUser()
+    if (me) {
+      toast.success(`Session OK — ${me.email}`)
+      console.debug("[ADMIN] /api/auth/me", me)
+    } else {
+      toast.error("Pas de session active (401 sur /api/auth/me)")
+    }
   }
 
   if (authLoading || loading) {
@@ -193,6 +243,26 @@ export default function AdminNotificationsPage() {
 
   return (
     <div className="p-6 space-y-6">
+      {/* Debug panel */}
+      <Card className="bg-gradient-to-br from-card to-muted/30 border-0">
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <Bug className="w-4 h-4 text-primary" />
+              <span>Debug: API={config.apiBaseUrl} — XSRF={hasXsrfCookie() ? "present" : "absent"}</span>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={testCsrf} className="cursor-pointer">
+                Rafraîchir CSRF
+              </Button>
+              <Button variant="outline" size="sm" onClick={testSession} className="cursor-pointer">
+                Vérifier session
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>

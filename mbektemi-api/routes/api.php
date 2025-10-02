@@ -15,6 +15,7 @@ use App\Http\Controllers\UserController;
 | Prérequis:
 | - Sanctum installé et migré
 | - SANCTUM_STATEFUL_DOMAINS / SESSION_DOMAIN / CORS configurés
+| - Middleware stateful appliqué aux requêtes du front (web ou EnsureFrontendRequestsAreStateful)
 */
 
 /* ----------------------------- Schedules ------------------------------- */
@@ -31,8 +32,10 @@ Route::get('/points-of-interest', [PointOfInterestController::class, 'index']);
 /* Rendre l'inscription publique; les autres actions restent protégées */
 Route::post('/pilgrims', [PilgrimController::class, 'store']);
 
-/* ----------------------- Routes protégées (token/cookie) --------------- */
-Route::middleware('auth:sanctum')->group(function () {
+/* ----------------------- Routes protégées (session Sanctum SPA) -------- */
+/* On applique 'web' + 'auth:sanctum' afin que les requêtes issues du SPA
+   soient traitées comme stateful (cookies) sur /api/* également. */
+Route::middleware(['web', 'auth:sanctum'])->group(function () {
     Route::get('/pilgrims',         [PilgrimController::class, 'index']);
     Route::patch('/pilgrims/{id}',  [PilgrimController::class, 'update']);
     Route::delete('/pilgrims/{id}', [PilgrimController::class, 'destroy']);
