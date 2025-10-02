@@ -4,38 +4,12 @@ import { Badge } from "@/components/ui/badge"
 import { Calendar, MapPin, Bell, Star, Compass } from "lucide-react"
 import { MosqueIcon, PrayerIcon, CommunityIcon, QiblaIcon, NotificationBellIcon } from "@/components/custom-icons"
 import Link from "next/link"
-import { HeroSection } from "@/components/hero-section"
+import HeroOptimized from "@/components/hero-optimized"
 
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background">
-      <HeroSection
-        title="MbekteMi"
-        subtitle="Application communautaire pour les pèlerins"
-        backgroundImage="/grande-mosqu-e-de-touba-au-coucher-du-soleil-avec-.jpg"
-        backgroundImageMobile="/grande-mosqu-e-de-touba-mobile-view.jpg"
-        overlay="gradient"
-        height="lg"
-        animated={true}
-        parallax={true}
-      >
-        <div className="animate-float mb-6">
-          <MosqueIcon className="w-20 h-20 mx-auto text-white mb-4" />
-        </div>
-        <div className="flex flex-wrap justify-center gap-4 mb-8">
-          <Badge variant="secondary" className="glass-effect text-white border-white/30">
-            <Star className="w-4 h-4 mr-2" />
-            Nouvelle version
-          </Badge>
-          <Badge variant="secondary" className="glass-effect text-white border-white/30">
-            <Compass className="w-4 h-4 mr-2" />
-            100% Responsive
-          </Badge>
-        </div>
-        <Button size="lg" className="animate-pulse-glow bg-white text-primary hover:bg-white/90 cursor-pointer">
-          Commencer l'expérience
-        </Button>
-      </HeroSection>
+      <HeroOptimized />
 
       <main className="max-w-6xl mx-auto px-4 py-16">
         {/* Welcome Section */}
