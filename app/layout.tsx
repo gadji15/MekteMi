@@ -9,6 +9,7 @@ import "./globals.css"
 import { Suspense } from "react"
 import PWARegister from "@/components/pwa-register"
 import QueryProvider from "@/components/query-provider"
+import { NotificationsProvider } from "@/contexts/notifications-context"
 
 export const metadata: Metadata = {
   title: "MbekteMi - Application Communautaire",
@@ -77,19 +78,12 @@ export default function RootLayout({
         <QueryProvider>
           <Suspense fallback={<div>Loading...</div>}>
             <AuthProvider>
-              <LayoutWrapper>{children}</LayoutWrapper>
+              <NotificationsProvider>
+                <LayoutWrapper>{children}</LayoutWrapper>
+              </NotificationsProvider>
             </AuthProvider>
           </Suspense>
         </QueryProvider>
-        <PWARegister />
-        <Analytics />
-      </body>
-    </html>
-  )
-}</LayoutWrapper>
-            </AuthProvider>
-          </Suspense>
-        </QueryClientProvider>
         <PWARegister />
         <Analytics />
       </body>
