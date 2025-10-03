@@ -32,95 +32,20 @@ Application web (Next.js + Laravel) destinée à accompagner la communauté Mour
 
 ---
 
-## Présentation rapide
-
-MbekteMi centralise des informations utiles pour le Magal de Touba:
-- Consultation des horaires (prières / programme)
-- Formulaire d’inscription des pèlerins
-- Notifications officielles
-- Points d’intérêt (hébergement, santé, restauration, transport, mosquées)
-- Espace admin (gestion basique)
-
-Objectifs pédagogiques: mettre en pratique une intégration réelle React (Next.js) ↔ Laravel via Axios, avec une authentification simple (Sanctum SPA) et une UX responsive.
-
----
-
-## Fonctionnalités
-
-- Horaires (affichage)
-- Inscription pèlerin (formulaire + validation côté client)
-- Notifications (chargées depuis l’API; CRUD côté admin)
-- Points d’intérêt (liste publique; CRUD côté admin)
-- Authentification simple (register/login/logout) avec cookie session
-
----
-
-## Stack technique
-
-- Frontend: Next.js 14 (App Router), React 18, TypeScript, Tailwind v4, shadcn/ui, Axios
-- Backend: Laravel 12 (API REST), Sanctum (SPA), Eloquent (migrations/seeders)
-- PWA: manifest + service worker (mode dev/local pris en charge, hors scope pour la note)
-
----
-
-## Démarrage rapide (local)
-
-Pré-requis:
-- WSL (Ubuntu) recommandé sous Windows
-- Docker Desktop + intégration WSL
-- Node LTS + pnpm (ou npm)
-- Git
-
-Commandes (dans WSL):
-
-```bash
-# 1) Cloner le projet
-git clone https://github.com/gadji15/MekteMi.git
-cd MekteMi
-
-# 2) Backend (Laravel + Sail)
-cd mbektemi-api
-./vendor/bin/sail up -d
-./vendor/bin/sail artisan migrate --force
-./vendor/bin/sail artisan db:seed
-----------
-Puis demarrer Docker DEsktop
-# Le backend sert sur http://localhost
-
-# 3) Frontend (Next.js)
-cd ..
-# 1: Vérifiez Node et npm:
-node -v
-npm -v
-# 2: Si node/npm manquent ou sont anciens, installez Node LTS (voir Option C).
-# Installez nvm:
-curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
-source ~/.nvm/nvm.sh
-# Installez Node LTS récent:
-nvm install --lts
-node -v
-npm -v
-# Installez pnpm:
-npm install -g pnpm
-pnpm -v
-# 4: Installez et lancez:
-pnpm install   # ou: npm install
-pnpm dev       # ou: npm run dev
-
-# 4) Ouvrir le front
-# http://localhost:3000
-```
-
-Checklist Sanctum locale (après avoir ouvert http://localhost:3000):
-- GET http://localhost/sanctum/csrf-cookie → pose les cookies
-- POST http://localhost/api/auth/register → 201
-- GET http://localhost/api/auth/me → 200 (session active)
-
----
 # Vidéo de présentation du projet
 
 Lien direct (à visionner avant la correction) :
 https://zupload.io/en/KY0WYZc2j1B9AF7/watch
+
+Aperçu (GIF léger) — cliquez pour ouvrir la vidéo:
+[![Aperçu GIF de la démo](public/preview.gif)](https://zupload.io/en/KY0WYZc2j1B9AF7/watch "Voir la vidéo complète")
+
+Pour générer/mettre à jour le GIF (depuis votre vidéo locale), utilisez le script:
+```bash
+# Exemple:
+./scripts/generate_preview_gif.sh /chemin/vers/video.mp4 public/preview.gif
+# crée un GIF de ~8s, 12 fps, largeur 640px
+```
 
 ---
 
