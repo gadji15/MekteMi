@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![MbekteMi Logo](public/icon.jpg)
+![MbekteMi Logo](public/icon-192.jpg)
 
 Application web (Next.js + Laravel) destinée à accompagner la communauté Mouride lors du Magal de Touba.
 
@@ -192,7 +192,7 @@ git config core.autocrlf input
 
 <div align="center">
 
-![MbekteMi Logo](public/icon.jpg)
+![MbekteMi Logo](public/icon-192.jpg)
 
 Application web (Next.js + Laravel) destinée à accompagner la communauté Mouride lors du Magal de Touba.
 
@@ -477,3 +477,4 @@ Remarque: si vous utilisez un autre hébergeur (Netlify/Render Static), adaptez 
 ---
 
 Ce document explique comment cloner, configurer et démarrer le projet en local, ainsi que l’architecture, les variables d’environnement et le flux d’authentification. Il est rédigé pour qu’un autre développeur puisse lancer l’application rapidement dans les mêmes conditions locales.
+
