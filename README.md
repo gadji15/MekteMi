@@ -117,6 +117,13 @@ Checklist Sanctum locale (après avoir ouvert http://localhost:3000):
 - GET http://localhost/api/auth/me → 200 (session active)
 
 ---
+# Vidéo de présentation du projet
+
+Lien direct (à visionner avant la correction) :
+https://zupload.io/en/KY0WYZc2j1B9AF7/watch
+
+---
+
 # ✅ Mise à jour GitHub (push sans blocage)
 
 Procédure fiable pour pousser vos changements sur GitHub depuis WSL, avec vérifications pour éviter les erreurs (Husky, lint, rebase).
@@ -178,6 +185,126 @@ Conseils anti-blocage
 ```bash
 git config core.autocrlf input
 ```
+
+---
+
+# 🕌 MbekteMi - Application Communautaire
+
+<div align="center">
+
+![MbekteMi Logo](public/icon.jpg)
+
+Application web (Next.js + Laravel) destinée à accompagner la communauté Mouride lors du Magal de Touba.
+
+[![Next.js](https://img.shields.io/badge/Next.js-14.2.16-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
+[![Laravel](https://img.shields.io/badge/Laravel-12-red?style=for-the-badge&logo=laravel)](https://laravel.com/)
+
+</div>
+
+---
+
+## 📋 Sommaire
+
+- [Présentation rapide](#présentation-rapide)
+- [Fonctionnalités](#fonctionnalités)
+- [Stack technique](#stack-technique)
+- [Démarrage rapide (local)](#démarrage-rapide-local)
+- [Procédure détaillée (local, avec Sail)](#procédure-détaillée-local-avec-sail)
+- [Variables d’environnement](#variables-denvironnement)
+- [Authentification (Sanctum SPA)](#authentification-sanctum-spa)
+- [Endpoints API principaux](#endpoints-api-principaux)
+- [Structure du projet](#structure-du-projet)
+- [Déploiement Frontend (prod)](#déploiement-frontend-prod)
+- [Présentation vidéo / démo](#présentation-vidéo--démo)
+- [Dépannage (FAQ)](#dépannage-faq)
+
+---
+
+## Présentation rapide
+
+MbekteMi centralise des informations utiles pour le Magal de Touba:
+- Consultation des horaires (prières / programme)
+- Formulaire d’inscription des pèlerins
+- Notifications officielles
+- Points d’intérêt (hébergement, santé, restauration, transport, mosquées)
+- Espace admin (gestion basique)
+
+Objectifs pédagogiques: mettre en pratique une intégration réelle React (Next.js) ↔ Laravel via Axios, avec une authentification simple (Sanctum SPA) et une UX responsive.
+
+---
+
+## Fonctionnalités
+
+- Horaires (affichage)
+- Inscription pèlerin (formulaire + validation côté client)
+- Notifications (chargées depuis l’API; CRUD côté admin)
+- Points d’intérêt (liste publique; CRUD côté admin)
+- Authentification simple (register/login/logout) avec cookie session
+
+---
+
+## Stack technique
+
+- Frontend: Next.js 14 (App Router), React 18, TypeScript, Tailwind v4, shadcn/ui, Axios
+- Backend: Laravel 12 (API REST), Sanctum (SPA), Eloquent (migrations/seeders)
+- PWA: manifest + service worker (mode dev/local pris en charge, hors scope pour la note)
+
+---
+
+## Démarrage rapide (local)
+
+Pré-requis:
+- WSL (Ubuntu) recommandé sous Windows
+- Docker Desktop + intégration WSL
+- Node LTS + pnpm (ou npm)
+- Git
+
+Commandes (dans WSL):
+
+```bash
+# 1) Cloner le projet
+git clone https://github.com/gadji15/MekteMi.git
+cd MekteMi
+
+# 2) Backend (Laravel + Sail)
+cd mbektemi-api
+./vendor/bin/sail up -d
+./vendor/bin/sail artisan migrate --force
+./vendor/bin/sail artisan db:seed
+----------
+Puis demarrer Docker DEsktop
+# Le backend sert sur http://localhost
+
+# 3) Frontend (Next.js)
+cd ..
+# 1: Vérifiez Node et npm:
+node -v
+npm -v
+# 2: Si node/npm manquent ou sont anciens, installez Node LTS (voir Option C).
+# Installez nvm:
+curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+source ~/.nvm/nvm.sh
+# Installez Node LTS récent:
+nvm install --lts
+node -v
+npm -v
+# Installez pnpm:
+npm install -g pnpm
+pnpm -v
+# 4: Installez et lancez:
+pnpm install   # ou: npm install
+pnpm dev       # ou: npm run dev
+
+# 4) Ouvrir le front
+# http://localhost:3000
+```
+
+Checklist Sanctum locale (après avoir ouvert http://localhost:3000):
+- GET http://localhost/sanctum/csrf-cookie → pose les cookies
+- POST http://localhost/api/auth/register → 201
+- GET http://localhost/api/auth/me → 200 (session active)
 
 ---
 
