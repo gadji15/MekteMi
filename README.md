@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![MbekteMi Logo](public/icon-192.jpg)
+![MbekteMi Logo](public/icon.jpg)
 
 Application web (Next.js + Laravel) destinée à accompagner la communauté Mouride lors du Magal de Touba.
 
@@ -32,6 +32,12 @@ Application web (Next.js + Laravel) destinée à accompagner la communauté Mour
 
 ---
 
+# Vidéo de présentation du projet
+
+Lien direct (à visionner avant la correction) :
+https://zupload.io/en/KY0WYZc2j1B9AF7/watch
+
+---
 ## Présentation rapide
 
 MbekteMi centralise des informations utiles pour le Magal de Touba:
@@ -117,13 +123,6 @@ Checklist Sanctum locale (après avoir ouvert http://localhost:3000):
 - GET http://localhost/api/auth/me → 200 (session active)
 
 ---
-# Présentation vidéo
-
-[![Voir la vidéo de présentation](https://img.shields.io/badge/Vidéo-Présentation-blue)](https://zupload.io/en/KY0WYZc2j1B9AF7/watch)
-[![Regarder la vidéo de présentation](public/icon.jpg)](https://zupload.io/en/KY0WYZc2j1B9AF7/watch "Regarder la vidéo")
-▶️ Lien direct: https://zupload.io/en/KY0WYZc2j1B9AF7/watch
-
----
 
 # ✅ Mise à jour GitHub (push sans blocage)
 
@@ -193,7 +192,7 @@ git config core.autocrlf input
 
 <div align="center">
 
-![MbekteMi Logo](public/icon-192.jpg)
+![MbekteMi Logo](public/icon.jpg)
 
 Application web (Next.js + Laravel) destinée à accompagner la communauté Mouride lors du Magal de Touba.
 
