@@ -310,38 +310,106 @@ Checklist Sanctum locale (après avoir ouvert http://localhost:3000):
 
 ## Procédure détaillée (local, avec Sail)
 
-1) Docker/Sail
+### 1) Installation du backend Laravel (Composer + Sail)
+
+À exécuter dans WSL, dans le dossier `mbektemi-api`:
+
+```bash
+cd mbektemi-api
+ls           # vous devez voir: composer.json, artisan, config/, app/, etc.
+```
+
+1. Installer les dépendances PHP (création du dossier `vendor/` et de Sail):
+
+   ```bash
+   composer install
+   ```
+
+   - Si `composer` n’est pas trouvé:
+     - Installez PHP et Composer dans WSL (Ubuntu):
+
+       ```bash
+       sudo apt update
+       sudo apt install php-cli unzip
+       curl -sS https://getcomposer.org/installer -o composer-setup.php
+       php composer-setup.php --install-dir=/usr/local/bin --filename=composer
+       composer --version
+       ```
+
+2. Vérifier que Sail est bien installé:
+
+   ```bash
+   ls vendor/bin
+   # Vous devez voir: sail
+   ```
+
+   - Si vous obtenez ce message:
+     - `bash: ./vendor/bin/sail: Aucun fichier ou dossier de ce nom`
+     - Cela signifie que `composer install` n’a pas été exécuté (ou a échoué).
+     - Relancez `composer install` puis réessayez.
+
+### 2) Lancer Docker/Sail
+
+Toujours dans `mbektemi-api`:
+
 - Démarrer les containers:
+
   ```bash
-  cd mbektemi-api
   ./vendor/bin/sail up -d
   ```
+
 - Migrations et seeders:
+
   ```bash
   ./vendor/bin/sail artisan migrate --force
   ./vendor/bin/sail artisan db:seed
   ```
 
-2) Variables backend (déjà prêtes pour local)
-- Fichier `mbektemi-api/.env` (fourni): 
-  - APP_URL=http://localhost
-  - SESSION_DOMAIN=localhost
-  - SANCTUM_STATEFUL_DOMAINS=localhost,localhost:3000,127.0.0.1,127.0.0.1:3000
+Le backend sert alors l’API sur: `http://localhost`.
 
-3) Frontend
-- Installer et lancer:
-  ```bash
-  cd ..
-  pnpm install   # ou npm install
-  pnpm dev
+### 3) Variables backend (déjà prêtes pour local)
+
+- Fichier `mbektemi-api/.env` (fourni):
+
+  ```env
+  APP_URL=http://localhost
+  SESSION_DOMAIN=localhost
+  SANCTUM_STATEFUL_DOMAINS=localhost,localhost:3000,127.0.0.1,127.0.0.1:3000
   ```
+
+### 4) Installation et lancement du frontend (Next.js)
+
+Revenez à la racine du projet:
+
+```bash
+cd ..
+```
+
+- Installer et lancer:
+
+  ```bash
+  pnpm install   # ou: npm install
+  pnpm dev       # ou: npm run dev
+  ```
+
 - Fichier `.env.local` (fourni):
+
   ```env
   NEXT_PUBLIC_API_BASE_URL=http://localhost
   NEXT_PUBLIC_API_TIMEOUT=10000
   ```
-  Si vous lancez Laravel avec `php artisan serve --port=8000`, utilisez à la place:
-  `NEXT_PUBLIC_API_BASE_URL=http://localhost:8000`
+
+  Si vous lancez Laravel sans Sail, avec:
+
+  ```bash
+  php artisan serve --port=8000
+  ```
+
+  alors utilisez à la place:
+
+  ```env
+  NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+  ```
 
 ---
 
